@@ -23,23 +23,43 @@ const DataContext = createContext<DataContextType | undefined>(undefined);
 export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [clients, setClients] = useState<Client[]>(() => {
     const saved = localStorage.getItem('studio_clients');
-    return saved ? JSON.parse(saved) : mockClients;
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      return Array.isArray(parsed) ? parsed : mockClients;
+    }
+    return mockClients;
   });
   const [models, setModels] = useState<Model[]>(() => {
     const saved = localStorage.getItem('studio_models');
-    return saved ? JSON.parse(saved) : mockModels;
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      return Array.isArray(parsed) ? parsed : mockModels;
+    }
+    return mockModels;
   });
   const [content, setContent] = useState<Content[]>(() => {
     const saved = localStorage.getItem('studio_content');
-    return saved ? JSON.parse(saved) : mockContent;
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      return Array.isArray(parsed) ? parsed : mockContent;
+    }
+    return mockContent;
   });
   const [schedule, setSchedule] = useState<ScheduleEvent[]>(() => {
     const saved = localStorage.getItem('studio_schedule');
-    return saved ? JSON.parse(saved) : mockSchedule;
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      return Array.isArray(parsed) ? parsed : mockSchedule;
+    }
+    return mockSchedule;
   });
   const [categories, setCategories] = useState<string[]>(() => {
     const saved = localStorage.getItem('studio_categories');
-    return saved ? JSON.parse(saved) : mockCategories;
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      return Array.isArray(parsed) ? parsed : mockCategories;
+    }
+    return mockCategories;
   });
 
   useEffect(() => {
@@ -74,11 +94,11 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
           api.getCategories()
         ]);
         
-        setClients(apiClients);
-        setModels(apiModels);
-        setContent(apiContent);
-        setSchedule(apiSchedule);
-        setCategories(apiCategories);
+        if (Array.isArray(apiClients)) setClients(apiClients);
+        if (Array.isArray(apiModels)) setModels(apiModels);
+        if (Array.isArray(apiContent)) setContent(apiContent);
+        if (Array.isArray(apiSchedule)) setSchedule(apiSchedule);
+        if (Array.isArray(apiCategories)) setCategories(apiCategories);
       } catch (error) {
         console.warn('API connection failed. Using local/mock data.', error);
         // If USE_MOCK_FALLBACK is true, we just keep the initial state (localStorage/mock)
@@ -161,14 +181,14 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Find old models
     const client = clients.find(c => c.id === clientId);
-    const project = client?.projects.find(p => p.id === projectId);
+    const project = client?.projects?.find(p => p.id === projectId);
     const oldModels = project?.models || [];
 
     setClients(clients.map(c => {
       // If client changed, remove from old client and add to new client
       if (newClientId && newClientId !== clientId) {
         if (c.id === clientId) {
-          return { ...c, projects: c.projects.filter(p => p.id !== projectId) };
+          return { ...c, projects: (c.projects || []).filter(p => p.id !== projectId) };
         }
         if (c.id === newClientId && project) {
           return { ...c, projects: [...c.projects, { ...project, ...projectData }] };
@@ -180,7 +200,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (c.id === clientId) {
         return {
           ...c,
-          projects: c.projects.map(p => p.id === projectId ? { ...p, ...projectData } : p)
+          projects: (c.projects || []).map(p => p.id === projectId ? { ...p, ...projectData } : p)
         };
       }
       return c;
@@ -194,7 +214,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const isInProject = newModels.includes(m.id);
         
         if (wasInProject && !isInProject) {
-          return { ...m, projects: m.projects.filter(id => id !== projectId) };
+          return { ...m, projects: (m.projects || []).filter(id => id !== projectId) };
         } else if (!wasInProject && isInProject) {
           return { ...m, projects: [...m.projects, projectId] };
         }

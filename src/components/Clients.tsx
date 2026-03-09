@@ -118,7 +118,7 @@ export default function Clients({ onNavigate }: { onNavigate?: (tab: string) => 
               </div>
               
               <div className="space-y-4">
-                {selectedClient.projects.map((project) => (
+                {(selectedClient.projects || []).map((project) => (
                   <div key={project.id} className="border border-gray-100 rounded-lg p-4 bg-gray-50">
                     <div className="flex justify-between items-center mb-4">
                       <h4 className="font-semibold text-gray-900">{project.title}</h4>
@@ -198,7 +198,7 @@ export default function Clients({ onNavigate }: { onNavigate?: (tab: string) => 
                     </div>
                   </div>
                 ))}
-                {selectedClient.projects.length === 0 && (
+                {(!selectedClient.projects || selectedClient.projects.length === 0) && (
                   <div className="text-center text-gray-500 py-4">কোনো প্রজেক্ট নেই</div>
                 )}
               </div>

@@ -85,9 +85,9 @@ export default function Models() {
               </h3>
               
               <div className="space-y-4">
-                {selectedModel.projects.map((projectId) => {
-                  const client = clients.find(c => c.projects.some(p => p.id === projectId));
-                  const project = client?.projects.find(p => p.id === projectId);
+                {(selectedModel.projects || []).map((projectId) => {
+                  const client = clients.find(c => (c.projects || []).some(p => p.id === projectId));
+                  const project = client?.projects?.find(p => p.id === projectId);
                   
                   if (!project || !client) return null;
 
@@ -133,7 +133,7 @@ export default function Models() {
                     </div>
                   );
                 })}
-                {selectedModel.projects.length === 0 && (
+                {(!selectedModel.projects || selectedModel.projects.length === 0) && (
                   <div className="text-center text-gray-500 py-4">কোনো প্রজেক্টে যুক্ত নেই</div>
                 )}
               </div>

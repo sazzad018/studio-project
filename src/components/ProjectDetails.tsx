@@ -12,7 +12,7 @@ export default function ProjectDetails({ clientId, projectId, onBack }: ProjectD
   const { clients, models } = useData();
 
   const client = clients.find(c => c.id === clientId);
-  const project = client?.projects.find(p => p.id === projectId);
+  const project = client?.projects?.find(p => p.id === projectId);
 
   if (!client || !project) {
     return (

@@ -5,9 +5,9 @@ import { useData } from '../context/DataContext';
 export default function Dashboard() {
   const { clients, content, schedule } = useData();
   
-  const totalProjects = clients.reduce((acc, client) => acc + client.projects.length, 0);
+  const totalProjects = clients.reduce((acc, client) => acc + (client.projects?.length || 0), 0);
   const activeProjects = clients.reduce(
-    (acc, client) => acc + client.projects.filter((p) => p.status !== 'Completed').length,
+    (acc, client) => acc + (client.projects?.filter((p) => p.status !== 'Completed').length || 0),
     0
   );
 
@@ -61,7 +61,7 @@ export default function Dashboard() {
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">সাম্প্রতিক প্রজেক্টসমূহ</h2>
           <div className="space-y-4">
-            {clients.flatMap(c => c.projects).slice(0, 3).map((project) => (
+            {clients.flatMap(c => c.projects || []).slice(0, 3).map((project) => (
               <div key={project.id} className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
                 <div>
                   <h3 className="font-medium text-gray-900">{project.title}</h3>

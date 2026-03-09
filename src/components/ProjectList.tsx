@@ -31,7 +31,7 @@ export default function ProjectList({ onNavigate }: { onNavigate?: (tab: string)
   });
 
   const allProjects = clients.flatMap(client => 
-    client.projects.map(project => ({ ...project, clientId: client.id, clientName: client.name, company: client.company }))
+    (client.projects || []).map(project => ({ ...project, clientId: client.id, clientName: client.name, company: client.company }))
   );
 
   const filteredProjects = allProjects.filter(project => {

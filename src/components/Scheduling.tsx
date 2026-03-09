@@ -10,7 +10,7 @@ export default function Scheduling() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newEvent, setNewEvent] = useState({ title: '', date: '', type: 'Shoot' as any, models: [] as string[], crew: [] as string[], projectId: '' });
 
-  const allProjects = clients.flatMap(client => client.projects.map(project => ({ ...project, clientName: client.name })));
+  const allProjects = clients.flatMap(client => (client.projects || []).map(project => ({ ...project, clientName: client.name })));
 
   const sortedSchedule = [...schedule].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 

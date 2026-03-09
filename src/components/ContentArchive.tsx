@@ -101,8 +101,8 @@ export default function ContentArchive() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {filteredContent.map((item) => {
-          const client = clients.find(c => c.projects.some(p => p.id === item.projectId));
-          const project = client?.projects.find(p => p.id === item.projectId);
+          const client = clients.find(c => (c.projects || []).some(p => p.id === item.projectId));
+          const project = client?.projects?.find(p => p.id === item.projectId);
 
           return (
             <div key={item.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden group hover:shadow-lg transition-all duration-300">
