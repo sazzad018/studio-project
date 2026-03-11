@@ -111,6 +111,34 @@ try {
         }
     } catch (\Exception $e) {}
     
+    // Auto-migrate missing columns for schedule table
+    $scheduleColumns = [
+        "models" => "TEXT",
+        "crew" => "TEXT",
+        "projectId" => "VARCHAR(100)",
+        "status" => "VARCHAR(50) DEFAULT 'Pending'"
+    ];
+    
+    try {
+        // Check if schedule table exists first
+        $stmt = $pdo->query("SHOW TABLES LIKE 'schedule'");
+        if ($stmt->rowCount() > 0) {
+            foreach ($scheduleColumns as $colName => $colDef) {
+                $stmt = $pdo->query("SHOW COLUMNS FROM schedule LIKE '$colName'");
+                if ($stmt->rowCount() == 0) {
+                    try {
+                        $pdo->exec("ALTER TABLE schedule ADD COLUMN $colName $colDef");
+                    } catch (\Exception $e) {}
+                }
+            }
+            
+            // Make status nullable or default
+            try {
+                $pdo->exec("ALTER TABLE schedule MODIFY COLUMN status VARCHAR(50) DEFAULT 'Pending'");
+            } catch (\Exception $e) {}
+        }
+    } catch (\Exception $e) {}
+    
 } catch (\PDOException $e) {
     http_response_code(500);
     if (strpos($e->getMessage(), 'could not find driver') !== false) {
