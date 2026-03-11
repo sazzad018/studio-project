@@ -23,6 +23,15 @@ if($data && isset($data->projectId)) {
     if (isset($data->dueDate)) { $fields[] = "dueDate = ?"; $values[] = $data->dueDate; }
     if (isset($data->budget)) { $fields[] = "budget = ?"; $values[] = $data->budget; }
     
+    if (isset($data->category)) { $fields[] = "category = ?"; $values[] = $data->category; }
+    if (isset($data->thumbnailUrl)) { $fields[] = "thumbnailUrl = ?"; $values[] = $data->thumbnailUrl; }
+    if (isset($data->script)) { $fields[] = "script = ?"; $values[] = $data->script; }
+    if (isset($data->link)) { $fields[] = "link = ?"; $values[] = $data->link; }
+    if (isset($data->clientAdvance)) { $fields[] = "clientAdvance = ?"; $values[] = $data->clientAdvance; }
+    if (isset($data->modelPayment)) { $fields[] = "modelPayment = ?"; $values[] = $data->modelPayment; }
+    if (isset($data->extraExpenses)) { $fields[] = "extraExpenses = ?"; $values[] = $data->extraExpenses; }
+    if (isset($data->contentLog)) { $fields[] = "contentLog = ?"; $values[] = json_encode($data->contentLog); }
+    
     if (count($fields) > 0) {
         $values[] = $projectId;
         $sql = "UPDATE projects SET " . implode(", ", $fields) . " WHERE id = ?";

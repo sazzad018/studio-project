@@ -34,6 +34,42 @@ try {
         PDO::ATTR_EMULATE_PREPARES   => false,
     ];
     $pdo = new PDO($dsn, $user, $pass, $options);
+    
+    // Auto-migrate missing columns for projects table
+    $columns = [
+        "category VARCHAR(100) DEFAULT ''",
+        "thumbnailUrl LONGTEXT",
+        "script TEXT",
+        "link VARCHAR(255)",
+        "clientAdvance DECIMAL(10, 2) DEFAULT 0",
+        "modelPayment DECIMAL(10, 2) DEFAULT 0",
+        "extraExpenses DECIMAL(10, 2) DEFAULT 0",
+        "contentLog TEXT"
+    ];
+    
+    foreach ($columns as $col) {
+        try {
+            $pdo->exec("ALTER TABLE projects ADD COLUMN $col");
+        } catch (\PDOException $e) {
+            // Column already exists or other error, ignore
+        }
+    }
+    
+    // Also try to modify existing thumbnailUrl to LONGTEXT if it was created as TEXT
+    try {
+        $pdo->exec("ALTER TABLE projects MODIFY COLUMN thumbnailUrl LONGTEXT");
+    } catch (\PDOException $e) {}
+    
+    // Auto-migrate categories table if missing
+    try {
+        $pdo->exec("CREATE TABLE IF NOT EXISTS categories (name VARCHAR(100) PRIMARY KEY)");
+        // Insert default categories if table is empty
+        $stmt = $pdo->query("SELECT COUNT(*) FROM categories");
+        if ($stmt->fetchColumn() == 0) {
+            $pdo->exec("INSERT INTO categories (name) VALUES ('Fashion'), ('Commercial'), ('Editorial'), ('Fitness'), ('Parts')");
+        }
+    } catch (\PDOException $e) {}
+    
 } catch (\PDOException $e) {
     http_response_code(500);
     if (strpos($e->getMessage(), 'could not find driver') !== false) {

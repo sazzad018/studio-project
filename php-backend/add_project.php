@@ -11,8 +11,17 @@ if($data && isset($data->clientId)) {
     $dueDate = isset($data->dueDate) ? $data->dueDate : '';
     $budget = isset($data->budget) ? $data->budget : 0;
     
-    $stmt = $pdo->prepare("INSERT INTO projects (id, client_id, name, status, dueDate, budget) VALUES (?, ?, ?, ?, ?, ?)");
-    $stmt->execute([$id, $data->clientId, $name, $status, $dueDate, $budget]);
+    $category = isset($data->category) ? $data->category : '';
+    $thumbnailUrl = isset($data->thumbnailUrl) ? $data->thumbnailUrl : null;
+    $script = isset($data->script) ? $data->script : null;
+    $link = isset($data->link) ? $data->link : null;
+    $clientAdvance = isset($data->clientAdvance) ? $data->clientAdvance : 0;
+    $modelPayment = isset($data->modelPayment) ? $data->modelPayment : 0;
+    $extraExpenses = isset($data->extraExpenses) ? $data->extraExpenses : 0;
+    $contentLog = isset($data->contentLog) ? json_encode($data->contentLog) : json_encode([]);
+    
+    $stmt = $pdo->prepare("INSERT INTO projects (id, client_id, name, status, dueDate, budget, category, thumbnailUrl, script, link, clientAdvance, modelPayment, extraExpenses, contentLog) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    $stmt->execute([$id, $data->clientId, $name, $status, $dueDate, $budget, $category, $thumbnailUrl, $script, $link, $clientAdvance, $modelPayment, $extraExpenses, $contentLog]);
     
     if (isset($data->models) && is_array($data->models)) {
         $stmtMod = $pdo->prepare("INSERT INTO project_models (project_id, model_id) VALUES (?, ?)");
