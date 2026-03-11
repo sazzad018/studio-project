@@ -203,10 +203,10 @@ export default function Clients({ onNavigate }: { onNavigate?: (tab: string) => 
                         কনটেন্ট লগ
                       </h5>
                       <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">
-                        {project.contentLog.map((log, index) => (
+                        {(project.contentLog || []).map((log, index) => (
                           <li key={index}>{log}</li>
                         ))}
-                        {project.contentLog.length === 0 && <li>কোনো লগ নেই</li>}
+                        {(project.contentLog || []).length === 0 && <li>কোনো লগ নেই</li>}
                       </ul>
                     </div>
 

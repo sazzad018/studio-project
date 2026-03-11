@@ -4,8 +4,17 @@ $data = json_decode(file_get_contents("php://input"));
 
 if($data) {
     $id = 'm' . time() . rand(100, 999);
+    
+    // Provide default values for fields that might be missing from the frontend
+    $name = isset($data->name) ? $data->name : '';
+    $category = isset($data->category) ? $data->category : '';
+    $hourlyRate = isset($data->hourlyRate) ? $data->hourlyRate : 0;
+    $rating = isset($data->rating) ? $data->rating : 0.0;
+    $imageUrl = isset($data->imageUrl) ? $data->imageUrl : '';
+    $status = isset($data->status) ? $data->status : 'Active';
+    
     $stmt = $pdo->prepare("INSERT INTO models (id, name, category, hourlyRate, rating, imageUrl, status) VALUES (?, ?, ?, ?, ?, ?, ?)");
-    $stmt->execute([$id, $data->name, $data->category, $data->hourlyRate, $data->rating, $data->imageUrl, $data->status]);
+    $stmt->execute([$id, $name, $category, $hourlyRate, $rating, $imageUrl, $status]);
     
     $data->id = $id;
     $data->projects = [];

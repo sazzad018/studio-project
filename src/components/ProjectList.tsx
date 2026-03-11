@@ -233,14 +233,14 @@ export default function ProjectList({ onNavigate }: { onNavigate?: (tab: string)
               <div className="bg-gray-50 p-3 rounded border border-gray-100 mb-4">
                 <h5 className="text-xs font-medium text-gray-700 mb-2 flex items-center">
                   <FileText className="w-3 h-3 mr-1 text-gray-400" />
-                  কনটেন্ট লগ ({project.contentLog.length})
+                  কনটেন্ট লগ ({(project.contentLog || []).length})
                 </h5>
                 <ul className="list-disc list-inside text-xs text-gray-600 space-y-1 truncate">
-                  {project.contentLog.slice(0, 2).map((log, index) => (
+                  {(project.contentLog || []).slice(0, 2).map((log, index) => (
                     <li key={index} className="truncate">{log}</li>
                   ))}
-                  {project.contentLog.length > 2 && <li>...আরও {project.contentLog.length - 2}টি</li>}
-                  {project.contentLog.length === 0 && <li>কোনো লগ নেই</li>}
+                  {(project.contentLog || []).length > 2 && <li>...আরও {(project.contentLog || []).length - 2}টি</li>}
+                  {(project.contentLog || []).length === 0 && <li>কোনো লগ নেই</li>}
                 </ul>
               </div>
 

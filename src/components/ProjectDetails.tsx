@@ -122,13 +122,13 @@ export default function ProjectDetails({ clientId, projectId, onBack }: ProjectD
               কনটেন্ট লগ
             </h3>
             <div className="space-y-3">
-              {project.contentLog.map((log, index) => (
+              {(project.contentLog || []).map((log, index) => (
                 <div key={index} className="flex items-start bg-gray-50 p-3 rounded-lg border border-gray-100">
                   <div className="w-2 h-2 mt-1.5 rounded-full bg-blue-500 mr-3 flex-shrink-0"></div>
                   <p className="text-sm text-gray-700">{log}</p>
                 </div>
               ))}
-              {project.contentLog.length === 0 && (
+              {(project.contentLog || []).length === 0 && (
                 <p className="text-sm text-gray-500 text-center py-4">কোনো কনটেন্ট লগ নেই।</p>
               )}
             </div>

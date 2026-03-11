@@ -12,7 +12,13 @@ if($data && isset($data->projectId)) {
 
     $fields = [];
     $values = [];
-    if (isset($data->name)) { $fields[] = "name = ?"; $values[] = $data->name; }
+    if (isset($data->name)) { 
+        $fields[] = "name = ?"; 
+        $values[] = $data->name; 
+    } elseif (isset($data->title)) { 
+        $fields[] = "name = ?"; 
+        $values[] = $data->title; 
+    }
     if (isset($data->status)) { $fields[] = "status = ?"; $values[] = $data->status; }
     if (isset($data->dueDate)) { $fields[] = "dueDate = ?"; $values[] = $data->dueDate; }
     if (isset($data->budget)) { $fields[] = "budget = ?"; $values[] = $data->budget; }

@@ -16,6 +16,13 @@ foreach ($clients as &$client) {
         $project['models'] = $stmtMod->fetchAll(PDO::FETCH_COLUMN);
         $project['budget'] = (float)$project['budget'];
         $totalBudget += $project['budget'];
+        
+        // Add default values for properties expected by the frontend
+        $project['title'] = isset($project['name']) ? $project['name'] : '';
+        $project['contentLog'] = [];
+        $project['clientAdvance'] = 0;
+        $project['modelPayment'] = 0;
+        $project['extraExpenses'] = 0;
     }
     $client['projects'] = $projects;
     
