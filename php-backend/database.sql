@@ -7,6 +7,7 @@ CREATE TABLE clients (
     company VARCHAR(100) NOT NULL,
     email VARCHAR(100) NOT NULL,
     phone VARCHAR(50) NOT NULL,
+    facebook VARCHAR(255),
     status VARCHAR(50) NOT NULL
 );
 

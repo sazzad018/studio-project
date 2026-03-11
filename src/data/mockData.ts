@@ -2,6 +2,9 @@ export type Client = {
   id: string;
   name: string;
   company: string;
+  email?: string;
+  phone?: string;
+  facebook?: string;
   totalBudget: number;
   projects: Project[];
 };

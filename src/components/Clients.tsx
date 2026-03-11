@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useData } from '../context/DataContext';
-import { Briefcase, DollarSign, FileText, Users, Plus } from 'lucide-react';
+import { Briefcase, DollarSign, FileText, Users, Plus, Phone, Mail, Facebook } from 'lucide-react';
 import Modal from './Modal';
 
 export default function Clients({ onNavigate }: { onNavigate?: (tab: string) => void }) {
@@ -8,7 +8,7 @@ export default function Clients({ onNavigate }: { onNavigate?: (tab: string) => 
   const [selectedClient, setSelectedClient] = useState(clients[0] || null);
   
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
-  const [newClient, setNewClient] = useState({ name: '', company: '', totalBudget: 0 });
+  const [newClient, setNewClient] = useState({ name: '', company: '', email: '', phone: '', facebook: '', totalBudget: 0 });
 
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
   const [newProject, setNewProject] = useState({ 
@@ -28,7 +28,7 @@ export default function Clients({ onNavigate }: { onNavigate?: (tab: string) => 
     e.preventDefault();
     addClient(newClient);
     setIsClientModalOpen(false);
-    setNewClient({ name: '', company: '', totalBudget: 0 });
+    setNewClient({ name: '', company: '', email: '', phone: '', facebook: '', totalBudget: 0 });
   };
 
   const handleAddProject = (e: React.FormEvent) => {
@@ -96,7 +96,29 @@ export default function Clients({ onNavigate }: { onNavigate?: (tab: string) => 
               <div className="flex justify-between items-start mb-6">
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900">{selectedClient.name}</h2>
-                  <p className="text-gray-500">{selectedClient.company}</p>
+                  <p className="text-gray-500 mb-3">{selectedClient.company}</p>
+                  <div className="space-y-1 text-sm text-gray-600">
+                    {selectedClient.phone && (
+                      <p className="flex items-center">
+                        <Phone className="w-4 h-4 mr-2 text-gray-400" />
+                        {selectedClient.phone}
+                      </p>
+                    )}
+                    {selectedClient.email && (
+                      <p className="flex items-center">
+                        <Mail className="w-4 h-4 mr-2 text-gray-400" />
+                        {selectedClient.email}
+                      </p>
+                    )}
+                    {selectedClient.facebook && (
+                      <p className="flex items-center">
+                        <Facebook className="w-4 h-4 mr-2 text-gray-400" />
+                        <a href={selectedClient.facebook} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">
+                          ফেসবুক পেজ
+                        </a>
+                      </p>
+                    )}
+                  </div>
                 </div>
                 <div className="text-right">
                   <p className="text-sm text-gray-500">মোট বাজেট</p>
@@ -220,6 +242,18 @@ export default function Clients({ onNavigate }: { onNavigate?: (tab: string) => 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">কোম্পানি</label>
             <input required type="text" value={newClient.company} onChange={e => setNewClient({...newClient, company: e.target.value})} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">ফোন নাম্বার (ঐচ্ছিক)</label>
+            <input type="tel" value={newClient.phone} onChange={e => setNewClient({...newClient, phone: e.target.value})} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">ইমেইল (ঐচ্ছিক)</label>
+            <input type="email" value={newClient.email} onChange={e => setNewClient({...newClient, email: e.target.value})} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">ফেসবুক পেজ লিংক (ঐচ্ছিক)</label>
+            <input type="url" value={newClient.facebook} onChange={e => setNewClient({...newClient, facebook: e.target.value})} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="https://facebook.com/..." />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">মোট বাজেট</label>
