@@ -36,56 +36,80 @@ try {
     $pdo = new PDO($dsn, $user, $pass, $options);
     
     // Auto-migrate missing columns for projects table
-    $columns = [
-        "category VARCHAR(100) DEFAULT ''",
-        "thumbnailUrl LONGTEXT",
-        "script TEXT",
-        "link VARCHAR(255)",
-        "clientAdvance DECIMAL(10, 2) DEFAULT 0",
-        "modelPayment DECIMAL(10, 2) DEFAULT 0",
-        "extraExpenses DECIMAL(10, 2) DEFAULT 0",
-        "contentLog TEXT"
+    $projectColumns = [
+        "category" => "VARCHAR(100) DEFAULT ''",
+        "thumbnailUrl" => "LONGTEXT",
+        "script" => "TEXT",
+        "link" => "VARCHAR(255)",
+        "clientAdvance" => "DECIMAL(10, 2) DEFAULT 0",
+        "modelPayment" => "DECIMAL(10, 2) DEFAULT 0",
+        "extraExpenses" => "DECIMAL(10, 2) DEFAULT 0",
+        "contentLog" => "TEXT"
     ];
     
-    foreach ($columns as $col) {
-        try {
-            $pdo->exec("ALTER TABLE projects ADD COLUMN $col");
-        } catch (\PDOException $e) {
-            // Column already exists or other error, ignore
-        }
-    }
-    
-    // Also try to modify existing thumbnailUrl to LONGTEXT if it was created as TEXT
     try {
-        $pdo->exec("ALTER TABLE projects MODIFY COLUMN thumbnailUrl LONGTEXT");
-    } catch (\PDOException $e) {}
+        // Check if projects table exists first
+        $stmt = $pdo->query("SHOW TABLES LIKE 'projects'");
+        if ($stmt->rowCount() > 0) {
+            foreach ($projectColumns as $colName => $colDef) {
+                $stmt = $pdo->query("SHOW COLUMNS FROM projects LIKE '$colName'");
+                if ($stmt->rowCount() == 0) {
+                    try {
+                        $pdo->exec("ALTER TABLE projects ADD COLUMN $colName $colDef");
+                    } catch (\Exception $e) {}
+                }
+            }
+            
+            // Modify thumbnailUrl to LONGTEXT if it's not already
+            try {
+                $stmt = $pdo->query("SHOW COLUMNS FROM projects LIKE 'thumbnailUrl'");
+                $col = $stmt->fetch();
+                if ($col && stripos($col['Type'], 'longtext') === false) {
+                    $pdo->exec("ALTER TABLE projects MODIFY COLUMN thumbnailUrl LONGTEXT");
+                }
+            } catch (\Exception $e) {}
+        }
+    } catch (\Exception $e) {}
     
     // Auto-migrate categories table if missing
     try {
-        $pdo->exec("CREATE TABLE IF NOT EXISTS categories (name VARCHAR(100) PRIMARY KEY)");
-        // Insert default categories if table is empty
-        $stmt = $pdo->query("SELECT COUNT(*) FROM categories");
-        if ($stmt->fetchColumn() == 0) {
+        $stmt = $pdo->query("SHOW TABLES LIKE 'categories'");
+        if ($stmt->rowCount() == 0) {
+            $pdo->exec("CREATE TABLE categories (name VARCHAR(100) PRIMARY KEY)");
             $pdo->exec("INSERT INTO categories (name) VALUES ('Fashion'), ('Commercial'), ('Editorial'), ('Fitness'), ('Parts')");
         }
-    } catch (\PDOException $e) {}
+    } catch (\Exception $e) {}
     
     // Auto-migrate missing columns for models table
     $modelColumns = [
-        "phone VARCHAR(50)",
-        "email VARCHAR(100)",
-        "facebook VARCHAR(255)"
+        "phone" => "VARCHAR(50)",
+        "email" => "VARCHAR(100)",
+        "facebook" => "VARCHAR(255)"
     ];
-    foreach ($modelColumns as $col) {
-        try {
-            $pdo->exec("ALTER TABLE models ADD COLUMN $col");
-        } catch (\PDOException $e) {}
-    }
     
-    // Modify imageUrl to LONGTEXT in models table
     try {
-        $pdo->exec("ALTER TABLE models MODIFY COLUMN imageUrl LONGTEXT");
-    } catch (\PDOException $e) {}
+        // Check if models table exists first
+        $stmt = $pdo->query("SHOW TABLES LIKE 'models'");
+        if ($stmt->rowCount() > 0) {
+            foreach ($modelColumns as $colName => $colDef) {
+                $stmt = $pdo->query("SHOW COLUMNS FROM models LIKE '$colName'");
+                if ($stmt->rowCount() == 0) {
+                    try {
+                        $pdo->exec("ALTER TABLE models ADD COLUMN $colName $colDef");
+                    } catch (\Exception $e) {}
+                }
+            }
+            
+            // Modify imageUrl to LONGTEXT if it's not already
+            try {
+                $stmt = $pdo->query("SHOW COLUMNS FROM models LIKE 'imageUrl'");
+                $col = $stmt->fetch();
+                if ($col && stripos($col['Type'], 'longtext') === false) {
+                    $pdo->exec("ALTER TABLE models MODIFY COLUMN imageUrl LONGTEXT");
+                }
+            } catch (\Exception $e) {}
+        }
+    } catch (\Exception $e) {}
     
 } catch (\PDOException $e) {
     http_response_code(500);
