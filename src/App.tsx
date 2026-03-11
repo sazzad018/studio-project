@@ -6,6 +6,7 @@ import Clients from './components/Clients';
 import Models from './components/Models';
 import Scheduling from './components/Scheduling';
 import ProjectDetails from './components/ProjectDetails';
+import InvoiceSystem from './components/InvoiceSystem';
 import { DataProvider } from './context/DataContext';
 
 export default function App() {
@@ -28,6 +29,8 @@ export default function App() {
         return <Models />;
       case 'scheduling':
         return <Scheduling />;
+      case 'invoice':
+        return <InvoiceSystem />;
       default:
         return <Dashboard />;
     }
@@ -35,10 +38,12 @@ export default function App() {
 
   return (
     <DataProvider>
-      <div className="flex h-screen bg-gray-50 font-sans">
-        <Sidebar currentTab={currentTab.split(':')[0]} setCurrentTab={setCurrentTab} />
-        <div className="flex-1 ml-64 overflow-y-auto p-8">
-          <main className="max-w-7xl mx-auto">
+      <div className="flex h-screen bg-gray-50 font-sans print:bg-white print:h-auto">
+        <div className="print:hidden">
+          <Sidebar currentTab={currentTab.split(':')[0]} setCurrentTab={setCurrentTab} />
+        </div>
+        <div className="flex-1 ml-64 print:ml-0 overflow-y-auto p-8 print:p-0 print:overflow-visible">
+          <main className="max-w-7xl mx-auto print:max-w-none print:w-full">
             {renderContent()}
           </main>
         </div>

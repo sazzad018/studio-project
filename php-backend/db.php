@@ -138,6 +138,27 @@ try {
             } catch (\Exception $e) {}
         }
     } catch (\Exception $e) {}
+
+    // Auto-migrate invoices table if missing
+    try {
+        $stmt = $pdo->query("SHOW TABLES LIKE 'invoices'");
+        if ($stmt->rowCount() == 0) {
+            $pdo->exec("CREATE TABLE invoices (
+                id VARCHAR(50) PRIMARY KEY,
+                clientId VARCHAR(50),
+                projectId VARCHAR(50),
+                invoiceNumber VARCHAR(50),
+                date VARCHAR(50),
+                dueDate VARCHAR(50),
+                items LONGTEXT,
+                subtotal DECIMAL(10, 2),
+                taxRate DECIMAL(5, 2),
+                discount DECIMAL(10, 2),
+                total DECIMAL(10, 2),
+                status VARCHAR(50) DEFAULT 'Unpaid'
+            )");
+        }
+    } catch (\Exception $e) {}
     
 } catch (\PDOException $e) {
     http_response_code(500);

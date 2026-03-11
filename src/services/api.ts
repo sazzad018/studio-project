@@ -1,5 +1,5 @@
 import { API_BASE_URL } from '../config';
-import { Client, Model, Content, ScheduleEvent, Project } from '../data/mockData';
+import { Client, Model, Content, ScheduleEvent, Project, Invoice } from '../data/mockData';
 
 // Helper function for API calls
 async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> {
@@ -39,6 +39,7 @@ export const api = {
   getContent: () => fetchApi<Content[]>('/get_content.php'),
   getSchedule: () => fetchApi<ScheduleEvent[]>('/get_schedule.php'),
   getCategories: () => fetchApi<string[]>('/get_categories.php'),
+  getInvoices: () => fetchApi<Invoice[]>('/get_invoices.php'),
 
   // POST Requests (আপনার PHP ফাইলগুলো JSON ডাটা রিসিভ করে ডাটাবেজে সেভ করবে)
   addClient: (data: Omit<Client, 'id' | 'projects'>) => 
@@ -61,4 +62,7 @@ export const api = {
     
   addCategory: (category: string) => 
     fetchApi<{success: boolean}>('/add_category.php', { method: 'POST', body: JSON.stringify({ category }) }),
+    
+  addInvoice: (data: Omit<Invoice, 'id'>) => 
+    fetchApi<Invoice>('/add_invoice.php', { method: 'POST', body: JSON.stringify(data) }),
 };

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Client, Model, Content, ScheduleEvent, Project, mockClients, mockModels, mockContent, mockSchedule, mockCategories } from '../data/mockData';
+import { Client, Model, Content, ScheduleEvent, Project, Invoice, mockClients, mockModels, mockContent, mockSchedule, mockCategories } from '../data/mockData';
 import { api } from '../services/api';
 import { USE_MOCK_FALLBACK } from '../config';
 
@@ -9,6 +9,7 @@ type DataContextType = {
   content: Content[];
   schedule: ScheduleEvent[];
   categories: string[];
+  invoices: Invoice[];
   addClient: (client: Omit<Client, 'id' | 'projects'>) => Promise<void>;
   addProject: (clientId: string, project: Omit<Project, 'id'>) => Promise<void>;
   updateProject: (clientId: string, projectId: string, projectData: Partial<Project>, newClientId?: string) => Promise<void>;
@@ -16,6 +17,7 @@ type DataContextType = {
   addContent: (contentItem: Omit<Content, 'id'>) => Promise<void>;
   addScheduleEvent: (event: Omit<ScheduleEvent, 'id'>) => Promise<void>;
   addCategory: (category: string) => Promise<void>;
+  addInvoice: (invoice: Omit<Invoice, 'id'>) => Promise<void>;
 };
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -61,6 +63,14 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     return mockCategories;
   });
+  const [invoices, setInvoices] = useState<Invoice[]>(() => {
+    const saved = localStorage.getItem('studio_invoices');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      return Array.isArray(parsed) ? parsed : [];
+    }
+    return [];
+  });
 
   useEffect(() => {
     localStorage.setItem('studio_clients', JSON.stringify(clients));
@@ -82,16 +92,21 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem('studio_categories', JSON.stringify(categories));
   }, [categories]);
 
+  useEffect(() => {
+    localStorage.setItem('studio_invoices', JSON.stringify(invoices));
+  }, [invoices]);
+
   // Fetch initial data from API
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [apiClients, apiModels, apiContent, apiSchedule, apiCategories] = await Promise.all([
+        const [apiClients, apiModels, apiContent, apiSchedule, apiCategories, apiInvoices] = await Promise.all([
           api.getClients(),
           api.getModels(),
           api.getContent(),
           api.getSchedule(),
-          api.getCategories()
+          api.getCategories(),
+          api.getInvoices()
         ]);
         
         if (Array.isArray(apiClients)) setClients(apiClients);
@@ -99,6 +114,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (Array.isArray(apiContent)) setContent(apiContent);
         if (Array.isArray(apiSchedule)) setSchedule(apiSchedule);
         if (Array.isArray(apiCategories)) setCategories(apiCategories);
+        if (Array.isArray(apiInvoices)) setInvoices(apiInvoices);
       } catch (error) {
         console.warn('API connection failed. Using local/mock data.', error);
         // If USE_MOCK_FALLBACK is true, we just keep the initial state (localStorage/mock)
@@ -283,8 +299,23 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const addInvoice = async (invoiceData: Omit<Invoice, 'id'>) => {
+    try {
+      const newInvoice = await api.addInvoice(invoiceData);
+      setInvoices([newInvoice, ...invoices]);
+    } catch (error) {
+      if (USE_MOCK_FALLBACK) {
+        const newInvoice: Invoice = {
+          ...invoiceData,
+          id: `inv${Date.now()}`,
+        };
+        setInvoices([newInvoice, ...invoices]);
+      }
+    }
+  };
+
   return (
-    <DataContext.Provider value={{ clients, models, content, schedule, categories, addClient, addProject, updateProject, addModel, addContent, addScheduleEvent, addCategory }}>
+    <DataContext.Provider value={{ clients, models, content, schedule, categories, invoices, addClient, addProject, updateProject, addModel, addContent, addScheduleEvent, addCategory, addInvoice }}>
       {children}
     </DataContext.Provider>
   );

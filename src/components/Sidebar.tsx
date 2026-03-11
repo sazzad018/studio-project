@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, Users, Camera, Image as ImageIcon, Calendar, Briefcase } from 'lucide-react';
+import { LayoutDashboard, Users, Camera, Image as ImageIcon, Calendar, Briefcase, FileText } from 'lucide-react';
 
 type SidebarProps = {
   currentTab: string;
@@ -13,6 +13,7 @@ export default function Sidebar({ currentTab, setCurrentTab }: SidebarProps) {
     { id: 'clients', label: 'ক্লায়েন্ট প্রোফাইল', icon: Users },
     { id: 'models', label: 'মডেল বিশ্লেষণ', icon: Camera },
     { id: 'scheduling', label: 'শিডিউলিং', icon: Calendar },
+    { id: 'invoice', label: 'ইনভয়েস', icon: FileText },
   ];
 
   return (

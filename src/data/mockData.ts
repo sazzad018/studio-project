@@ -55,6 +55,28 @@ export type ScheduleEvent = {
   projectId?: string;
 };
 
+export type InvoiceItem = {
+  id: string;
+  description: string;
+  quantity: number;
+  rate: number;
+};
+
+export type Invoice = {
+  id: string;
+  clientId: string;
+  projectId: string;
+  invoiceNumber: string;
+  date: string;
+  dueDate: string;
+  items: InvoiceItem[];
+  subtotal: number;
+  taxRate: number;
+  discount: number;
+  total: number;
+  status: 'Paid' | 'Unpaid' | 'Overdue';
+};
+
 export const mockModels: Model[] = [
   {
     id: 'm1',
