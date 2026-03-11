@@ -32,6 +32,9 @@ export type Model = {
   hourlyRate: number;
   projects: string[]; // project IDs
   imageUrl: string;
+  phone?: string;
+  email?: string;
+  facebook?: string;
 };
 
 export type Content = {

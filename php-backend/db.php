@@ -70,6 +70,23 @@ try {
         }
     } catch (\PDOException $e) {}
     
+    // Auto-migrate missing columns for models table
+    $modelColumns = [
+        "phone VARCHAR(50)",
+        "email VARCHAR(100)",
+        "facebook VARCHAR(255)"
+    ];
+    foreach ($modelColumns as $col) {
+        try {
+            $pdo->exec("ALTER TABLE models ADD COLUMN $col");
+        } catch (\PDOException $e) {}
+    }
+    
+    // Modify imageUrl to LONGTEXT in models table
+    try {
+        $pdo->exec("ALTER TABLE models MODIFY COLUMN imageUrl LONGTEXT");
+    } catch (\PDOException $e) {}
+    
 } catch (\PDOException $e) {
     http_response_code(500);
     if (strpos($e->getMessage(), 'could not find driver') !== false) {

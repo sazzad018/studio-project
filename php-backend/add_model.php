@@ -12,9 +12,12 @@ if($data) {
     $rating = isset($data->rating) ? $data->rating : 0.0;
     $imageUrl = isset($data->imageUrl) ? $data->imageUrl : '';
     $status = isset($data->status) ? $data->status : 'Active';
+    $phone = isset($data->phone) ? $data->phone : '';
+    $email = isset($data->email) ? $data->email : '';
+    $facebook = isset($data->facebook) ? $data->facebook : '';
     
-    $stmt = $pdo->prepare("INSERT INTO models (id, name, category, hourlyRate, rating, imageUrl, status) VALUES (?, ?, ?, ?, ?, ?, ?)");
-    $stmt->execute([$id, $name, $category, $hourlyRate, $rating, $imageUrl, $status]);
+    $stmt = $pdo->prepare("INSERT INTO models (id, name, category, hourlyRate, rating, imageUrl, status, phone, email, facebook) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    $stmt->execute([$id, $name, $category, $hourlyRate, $rating, $imageUrl, $status, $phone, $email, $facebook]);
     
     $data->id = $id;
     $data->projects = [];

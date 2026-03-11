@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useData } from '../context/DataContext';
-import { Star, Briefcase, DollarSign, User, Plus } from 'lucide-react';
+import { Star, Briefcase, DollarSign, User, Plus, Phone, Mail, Facebook } from 'lucide-react';
 import Modal from './Modal';
 
 export default function Models() {
@@ -8,7 +8,46 @@ export default function Models() {
   const [selectedModel, setSelectedModel] = useState(models[0] || null);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [newModel, setNewModel] = useState({ name: '', category: '', hourlyRate: 0, imageUrl: '', projects: [] as string[] });
+  const [newModel, setNewModel] = useState({ name: '', category: '', hourlyRate: 0, imageUrl: '', phone: '', email: '', facebook: '', projects: [] as string[] });
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 800;
+          const MAX_HEIGHT = 600;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          
+          const base64String = canvas.toDataURL('image/jpeg', 0.7);
+          setNewModel({ ...newModel, imageUrl: base64String });
+        };
+        img.src = reader.result as string;
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleAddModel = (e: React.FormEvent) => {
     e.preventDefault();
@@ -17,7 +56,7 @@ export default function Models() {
       imageUrl: newModel.imageUrl || `https://picsum.photos/seed/${newModel.name}/200/300`
     });
     setIsModalOpen(false);
-    setNewModel({ name: '', category: '', hourlyRate: 0, imageUrl: '', projects: [] });
+    setNewModel({ name: '', category: '', hourlyRate: 0, imageUrl: '', phone: '', email: '', facebook: '', projects: [] });
   };
 
   return (
@@ -76,6 +115,29 @@ export default function Models() {
                       <DollarSign className="w-4 h-4 mr-1" /> ৳{selectedModel.hourlyRate.toLocaleString()}/ঘন্টা
                     </span>
                   </div>
+                  
+                  {(selectedModel.phone || selectedModel.email || selectedModel.facebook) && (
+                    <div className="mt-4 flex flex-col items-center md:items-start space-y-2 text-sm text-gray-600">
+                      {selectedModel.phone && (
+                        <div className="flex items-center">
+                          <Phone className="w-4 h-4 mr-2 text-gray-400" />
+                          <a href={`tel:${selectedModel.phone}`} className="hover:text-purple-600 transition-colors">{selectedModel.phone}</a>
+                        </div>
+                      )}
+                      {selectedModel.email && (
+                        <div className="flex items-center">
+                          <Mail className="w-4 h-4 mr-2 text-gray-400" />
+                          <a href={`mailto:${selectedModel.email}`} className="hover:text-purple-600 transition-colors">{selectedModel.email}</a>
+                        </div>
+                      )}
+                      {selectedModel.facebook && (
+                        <div className="flex items-center">
+                          <Facebook className="w-4 h-4 mr-2 text-gray-400" />
+                          <a href={selectedModel.facebook} target="_blank" rel="noopener noreferrer" className="hover:text-purple-600 transition-colors">Facebook Profile</a>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -161,8 +223,25 @@ export default function Models() {
             <input required type="number" value={newModel.hourlyRate} onChange={e => setNewModel({...newModel, hourlyRate: Number(e.target.value)})} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">ছবির URL (ঐচ্ছিক)</label>
-            <input type="url" value={newModel.imageUrl} onChange={e => setNewModel({...newModel, imageUrl: e.target.value})} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none" placeholder="https://..." />
+            <label className="block text-sm font-medium text-gray-700 mb-1">ফোন নাম্বার (ঐচ্ছিক)</label>
+            <input type="tel" value={newModel.phone} onChange={e => setNewModel({...newModel, phone: e.target.value})} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none" placeholder="+8801..." />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">ইমেইল (ঐচ্ছিক)</label>
+            <input type="email" value={newModel.email} onChange={e => setNewModel({...newModel, email: e.target.value})} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none" placeholder="example@email.com" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">ফেসবুক পেজ/প্রোফাইল (ঐচ্ছিক)</label>
+            <input type="url" value={newModel.facebook} onChange={e => setNewModel({...newModel, facebook: e.target.value})} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none" placeholder="https://facebook.com/..." />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">মডেলের ছবি</label>
+            <input type="file" accept="image/*" onChange={handleImageUpload} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none" />
+            {newModel.imageUrl && (
+              <div className="mt-2">
+                <img src={newModel.imageUrl} alt="Preview" className="h-24 w-24 object-cover rounded-lg border border-gray-200" />
+              </div>
+            )}
           </div>
           <button type="submit" className="w-full bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700 transition-colors">যোগ করুন</button>
         </form>
