@@ -426,14 +426,23 @@ export default function InvoiceSystem() {
               </thead>
               <tbody>
                 {items.map((item, index) => (
-                  <tr key={item.id} className="border-b border-gray-100">
-                    <td className="py-3">
-                      <input 
-                        type="text" 
+                  <tr key={item.id} className="border-b border-gray-100 align-top">
+                    <td className="py-3 pr-4">
+                      <textarea 
                         value={item.description}
-                        onChange={(e) => handleItemChange(item.id, 'description', e.target.value)}
+                        onChange={(e) => {
+                          e.target.style.height = 'auto';
+                          e.target.style.height = e.target.scrollHeight + 'px';
+                          handleItemChange(item.id, 'description', e.target.value);
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.height = 'auto';
+                          e.target.style.height = e.target.scrollHeight + 'px';
+                        }}
                         placeholder="কাজের বিবরণ..."
-                        className="w-full bg-transparent border-none focus:ring-0 p-0 text-gray-900"
+                        className="w-full bg-transparent border-none focus:ring-0 p-0 text-gray-900 resize-none overflow-hidden"
+                        rows={1}
+                        style={{ minHeight: '24px' }}
                       />
                     </td>
                     <td className="py-3 text-center">
