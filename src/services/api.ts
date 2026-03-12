@@ -65,4 +65,7 @@ export const api = {
     
   addInvoice: (data: Omit<Invoice, 'id'>) => 
     fetchApi<Invoice>('/add_invoice.php', { method: 'POST', body: JSON.stringify(data) }),
+    
+  deleteInvoice: (id: string) => 
+    fetchApi<{success: boolean}>('/delete_invoice.php', { method: 'POST', body: JSON.stringify({ id }) }),
 };

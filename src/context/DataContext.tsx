@@ -18,6 +18,7 @@ type DataContextType = {
   addScheduleEvent: (event: Omit<ScheduleEvent, 'id'>) => Promise<void>;
   addCategory: (category: string) => Promise<void>;
   addInvoice: (invoice: Omit<Invoice, 'id'>) => Promise<void>;
+  deleteInvoice: (id: string) => Promise<void>;
 };
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -314,8 +315,19 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const deleteInvoice = async (id: string) => {
+    try {
+      await api.deleteInvoice(id);
+      setInvoices(invoices.filter(inv => inv.id !== id));
+    } catch (error) {
+      if (USE_MOCK_FALLBACK) {
+        setInvoices(invoices.filter(inv => inv.id !== id));
+      }
+    }
+  };
+
   return (
-    <DataContext.Provider value={{ clients, models, content, schedule, categories, invoices, addClient, addProject, updateProject, addModel, addContent, addScheduleEvent, addCategory, addInvoice }}>
+    <DataContext.Provider value={{ clients, models, content, schedule, categories, invoices, addClient, addProject, updateProject, addModel, addContent, addScheduleEvent, addCategory, addInvoice, deleteInvoice }}>
       {children}
     </DataContext.Provider>
   );

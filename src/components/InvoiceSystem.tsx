@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useData } from '../context/DataContext';
 import { FileText, Plus, Trash2, Printer, Download, Save, CheckCircle } from 'lucide-react';
+import html2pdf from 'html2pdf.js';
 
 type InvoiceItem = {
   id: string;
@@ -10,7 +11,7 @@ type InvoiceItem = {
 };
 
 export default function InvoiceSystem() {
-  const { clients, addInvoice, invoices } = useData();
+  const { clients, addInvoice, invoices, deleteInvoice } = useData();
   const [selectedClientId, setSelectedClientId] = useState<string>('');
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
   const [invoiceDate, setInvoiceDate] = useState<string>(new Date().toISOString().split('T')[0]);
@@ -27,6 +28,9 @@ export default function InvoiceSystem() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [activeTab, setActiveTab] = useState<'create' | 'saved'>('create');
+  
+  const [message, setMessage] = useState<{text: string, type: 'error' | 'success'} | null>(null);
+  const [invoiceToDelete, setInvoiceToDelete] = useState<string | null>(null);
 
   const selectedClient = clients.find(c => c.id === selectedClientId);
   const selectedProject = selectedClient?.projects.find(p => p.id === selectedProjectId);
@@ -80,14 +84,39 @@ export default function InvoiceSystem() {
 
   const handleDownloadPDF = (inv: any) => {
     handleViewInvoice(inv);
+    
+    // Wait for the DOM to update with the new invoice data
     setTimeout(() => {
-      window.print();
-    }, 100);
+      const element = document.getElementById('invoice-preview');
+      if (!element) return;
+      
+      const opt = {
+        margin:       10,
+        filename:     `Invoice_${inv.invoiceNumber}.pdf`,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+      
+      html2pdf().set(opt).from(element).save();
+    }, 500);
+  };
+
+  const handleDeleteInvoice = async (id: string) => {
+    setInvoiceToDelete(id);
+  };
+
+  const confirmDelete = async () => {
+    if (invoiceToDelete) {
+      await deleteInvoice(invoiceToDelete);
+      setInvoiceToDelete(null);
+    }
   };
 
   const handleSaveInvoice = async () => {
     if (!selectedClientId) {
-      alert('অনুগ্রহ করে একজন ক্লায়েন্ট নির্বাচন করুন');
+      setMessage({ text: 'অনুগ্রহ করে একজন ক্লায়েন্ট নির্বাচন করুন', type: 'error' });
+      setTimeout(() => setMessage(null), 3000);
       return;
     }
 
@@ -114,14 +143,44 @@ export default function InvoiceSystem() {
       setInvoiceNumber(`INV-${Math.floor(Math.random() * 10000)}`);
     } catch (error) {
       console.error('Failed to save invoice', error);
-      alert('ইনভয়েস সেভ করতে সমস্যা হয়েছে');
+      setMessage({ text: 'ইনভয়েস সেভ করতে সমস্যা হয়েছে', type: 'error' });
+      setTimeout(() => setMessage(null), 3000);
     } finally {
       setIsSaving(false);
     }
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
+      {message && (
+        <div className={`fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 text-white ${message.type === 'error' ? 'bg-red-600' : 'bg-green-600'}`}>
+          {message.text}
+        </div>
+      )}
+      
+      {invoiceToDelete && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-xl shadow-xl max-w-sm w-full mx-4">
+            <h3 className="text-lg font-bold text-gray-900 mb-2">ইনভয়েস মুছুন</h3>
+            <p className="text-gray-600 mb-6">আপনি কি নিশ্চিত যে এই ইনভয়েসটি মুছে ফেলতে চান? এই কাজটি বাতিল করা যাবে না।</p>
+            <div className="flex justify-end gap-3">
+              <button 
+                onClick={() => setInvoiceToDelete(null)}
+                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                বাতিল
+              </button>
+              <button 
+                onClick={confirmDelete}
+                className="px-4 py-2 bg-red-600 text-white hover:bg-red-700 rounded-lg transition-colors"
+              >
+                মুছে ফেলুন
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 print:hidden">
         <h1 className="text-3xl font-bold text-gray-900 flex items-center">
           <FileText className="mr-3 text-indigo-600" />
@@ -205,6 +264,13 @@ export default function InvoiceSystem() {
                               className="p-1.5 text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
                             >
                               <Download size={18} />
+                            </button>
+                            <button 
+                              onClick={() => handleDeleteInvoice(inv.id)}
+                              title="ইনভয়েস মুছুন"
+                              className="p-1.5 text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                            >
+                              <Trash2 size={18} />
                             </button>
                           </div>
                         </td>
