@@ -86,7 +86,7 @@ export default function InvoiceSystem() {
 
   const handleDownloadPDF = (inv: any) => {
     setIsDownloading(true);
-    setMessage({ text: 'পিডিএফ তৈরি হচ্ছে, দয়া করে অপেক্ষা করুন...', type: 'success' });
+    setMessage({ text: 'পিডিএফ তৈরি হচ্ছে... (ডাউনলোড না হলে অ্যাপটি নতুন ট্যাবে ওপেন করুন)', type: 'success' });
     
     handleViewInvoice(inv);
     
@@ -144,20 +144,19 @@ export default function InvoiceSystem() {
         
         generatePDF().set(opt).from(element).save().then(() => {
           setIsDownloading(false);
-          setMessage(null);
+          setTimeout(() => setMessage(null), 4000);
         }).catch((err: any) => {
           throw err;
         });
       } catch (error) {
         console.error("PDF generation error:", error);
         setIsDownloading(false);
-        setMessage({ text: 'পিডিএফ তৈরি করতে সমস্যা হয়েছে। প্রিন্ট অপশন ব্যবহার করা হচ্ছে...', type: 'error' });
+        setMessage({ text: 'ডাউনলোড ব্লক করা হয়েছে। দয়া করে অ্যাপটি নতুন ট্যাবে ওপেন করে আবার চেষ্টা করুন।', type: 'error' });
         setTimeout(() => {
           setMessage(null);
-          window.print();
-        }, 2000);
+        }, 5000);
       }
-    }, 1000);
+    }, 1500);
   };
 
   const handleDeleteInvoice = async (id: string) => {
