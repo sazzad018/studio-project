@@ -82,24 +82,82 @@ export default function InvoiceSystem() {
     setActiveTab('create');
   };
 
+  const [isDownloading, setIsDownloading] = useState(false);
+
   const handleDownloadPDF = (inv: any) => {
+    setIsDownloading(true);
+    setMessage({ text: 'পিডিএফ তৈরি হচ্ছে, দয়া করে অপেক্ষা করুন...', type: 'success' });
+    
     handleViewInvoice(inv);
     
     // Wait for the DOM to update with the new invoice data
     setTimeout(() => {
       const element = document.getElementById('invoice-preview');
-      if (!element) return;
+      if (!element) {
+        setIsDownloading(false);
+        setMessage({ text: 'পিডিএফ তৈরি করতে সমস্যা হয়েছে।', type: 'error' });
+        setTimeout(() => setMessage(null), 3000);
+        return;
+      }
       
-      const opt = {
+      const opt: any = {
         margin:       10,
         filename:     `Invoice_${inv.invoiceNumber}.pdf`,
         image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2, useCORS: true },
+        html2canvas:  { 
+          scale: 2, 
+          useCORS: true, 
+          logging: false,
+          onclone: (clonedDoc: Document) => {
+            const textareas = clonedDoc.querySelectorAll('textarea');
+            textareas.forEach(ta => {
+              const div = clonedDoc.createElement('div');
+              div.className = ta.className;
+              div.style.cssText = ta.style.cssText;
+              div.style.whiteSpace = 'pre-wrap';
+              div.style.wordBreak = 'break-word';
+              div.textContent = ta.value;
+              ta.parentNode?.replaceChild(div, ta);
+            });
+            const inputs = clonedDoc.querySelectorAll('input');
+            inputs.forEach(input => {
+              if (input.type === 'text' || input.type === 'number') {
+                const div = clonedDoc.createElement('div');
+                div.className = input.className;
+                div.style.cssText = input.style.cssText;
+                div.textContent = input.value;
+                input.parentNode?.replaceChild(div, input);
+              }
+            });
+          }
+        },
         jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
       };
       
-      html2pdf().set(opt).from(element).save();
-    }, 500);
+      try {
+        // @ts-ignore
+        const generatePDF = typeof html2pdf === 'function' ? html2pdf : html2pdf.default || window.html2pdf;
+        
+        if (!generatePDF) {
+          throw new Error("html2pdf library not found");
+        }
+        
+        generatePDF().set(opt).from(element).save().then(() => {
+          setIsDownloading(false);
+          setMessage(null);
+        }).catch((err: any) => {
+          throw err;
+        });
+      } catch (error) {
+        console.error("PDF generation error:", error);
+        setIsDownloading(false);
+        setMessage({ text: 'পিডিএফ তৈরি করতে সমস্যা হয়েছে। প্রিন্ট অপশন ব্যবহার করা হচ্ছে...', type: 'error' });
+        setTimeout(() => {
+          setMessage(null);
+          window.print();
+        }, 2000);
+      }
+    }, 1000);
   };
 
   const handleDeleteInvoice = async (id: string) => {
@@ -260,8 +318,9 @@ export default function InvoiceSystem() {
                             </button>
                             <button 
                               onClick={() => handleDownloadPDF(inv)}
+                              disabled={isDownloading}
                               title="পিডিএফ ডাউনলোড"
-                              className="p-1.5 text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
+                              className="p-1.5 text-gray-600 hover:bg-gray-100 rounded-md transition-colors disabled:opacity-50"
                             >
                               <Download size={18} />
                             </button>
