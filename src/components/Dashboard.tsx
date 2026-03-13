@@ -1,5 +1,5 @@
 import React from 'react';
-import { Users, Camera, Image as ImageIcon, Calendar } from 'lucide-react';
+import { Users, Camera, Image as ImageIcon, Calendar, DollarSign, TrendingDown, TrendingUp } from 'lucide-react';
 import { useData } from '../context/DataContext';
 
 export default function Dashboard() {
@@ -10,6 +10,11 @@ export default function Dashboard() {
     (acc, client) => acc + (client.projects?.filter((p) => p.status !== 'Completed').length || 0),
     0
   );
+
+  const allProjects = clients.flatMap(c => c.projects || []);
+  const totalProjectValue = allProjects.reduce((sum, p) => sum + (p.budget || 0), 0);
+  const totalExpenses = allProjects.reduce((sum, p) => sum + (p.modelPayment || 0) + (p.extraExpenses || 0), 0);
+  const totalRevenue = totalProjectValue - totalExpenses;
 
   return (
     <div className="space-y-6">
@@ -53,6 +58,38 @@ export default function Dashboard() {
           <div>
             <p className="text-sm font-medium text-gray-500">আসন্ন ইভেন্ট</p>
             <p className="text-2xl font-semibold text-gray-900">{schedule.length}</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4">
+          <div className="p-3 bg-indigo-50 text-indigo-600 rounded-lg">
+            <DollarSign size={24} />
+          </div>
+          <div>
+            <p className="text-sm font-medium text-gray-500">মোট কত টাকার প্রোজেক্ট</p>
+            <p className="text-2xl font-semibold text-gray-900">৳{totalProjectValue.toLocaleString('bn-BD')}</p>
+          </div>
+        </div>
+        
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4">
+          <div className="p-3 bg-red-50 text-red-600 rounded-lg">
+            <TrendingDown size={24} />
+          </div>
+          <div>
+            <p className="text-sm font-medium text-gray-500">মোট এক্সপেন্স</p>
+            <p className="text-2xl font-semibold text-gray-900">৳{totalExpenses.toLocaleString('bn-BD')}</p>
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4">
+          <div className="p-3 bg-green-50 text-green-600 rounded-lg">
+            <TrendingUp size={24} />
+          </div>
+          <div>
+            <p className="text-sm font-medium text-gray-500">রেভিনিউ</p>
+            <p className="text-2xl font-semibold text-gray-900">৳{totalRevenue.toLocaleString('bn-BD')}</p>
           </div>
         </div>
       </div>
