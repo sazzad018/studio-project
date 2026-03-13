@@ -1,5 +1,5 @@
-import React from 'react';
-import { LayoutDashboard, Users, Camera, Image as ImageIcon, Calendar, Briefcase, FileText } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { LayoutDashboard, Users, Camera, Image as ImageIcon, Calendar, Briefcase, FileText, Upload, X } from 'lucide-react';
 
 type SidebarProps = {
   currentTab: string;
@@ -7,6 +7,28 @@ type SidebarProps = {
 };
 
 export default function Sidebar({ currentTab, setCurrentTab }: SidebarProps) {
+  const [appLogo, setAppLogo] = useState<string>(() => localStorage.getItem('appLogo') || '');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const result = reader.result as string;
+        setAppLogo(result);
+        localStorage.setItem('appLogo', result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveLogo = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setAppLogo('');
+    localStorage.removeItem('appLogo');
+  };
+
   const tabs = [
     { id: 'dashboard', label: 'ড্যাশবোর্ড', icon: LayoutDashboard },
     { id: 'projects', label: 'প্রজেক্ট লিস্ট', icon: Briefcase },
@@ -19,10 +41,39 @@ export default function Sidebar({ currentTab, setCurrentTab }: SidebarProps) {
   return (
     <div className="w-64 bg-white border-r border-gray-200 h-screen fixed left-0 top-0 flex flex-col">
       <div className="p-6 border-b border-gray-200">
-        <h1 className="text-2xl font-bold text-indigo-600 flex items-center">
-          <Camera className="mr-2" />
-          স্টুডিও প্রো
-        </h1>
+        <div 
+          className="relative group cursor-pointer flex items-center h-12 rounded-lg hover:bg-gray-50 transition-colors p-2 -mx-2"
+          onClick={() => fileInputRef.current?.click()}
+          title="লোগো পরিবর্তন করতে ক্লিক করুন"
+        >
+          {appLogo ? (
+            <div className="w-full flex items-center justify-between">
+              <img src={appLogo} alt="App Logo" className="max-h-10 max-w-[180px] object-contain" />
+              <button 
+                onClick={handleRemoveLogo}
+                className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity p-1"
+                title="লোগো মুছুন"
+              >
+                <X size={16} />
+              </button>
+            </div>
+          ) : (
+            <div className="w-full flex items-center justify-between">
+              <h1 className="text-2xl font-bold text-indigo-600 flex items-center">
+                <Camera className="mr-2" />
+                স্টুডিও প্রো
+              </h1>
+              <Upload size={16} className="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+            </div>
+          )}
+          <input 
+            type="file" 
+            ref={fileInputRef} 
+            onChange={handleLogoUpload} 
+            accept="image/*" 
+            className="hidden" 
+          />
+        </div>
       </div>
       <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
         {tabs.map((tab) => {
