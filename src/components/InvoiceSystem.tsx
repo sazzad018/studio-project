@@ -495,58 +495,58 @@ export default function InvoiceSystem() {
         </div>
 
         {/* Invoice Preview */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 lg:col-span-2 print:col-span-3 print:shadow-none print:border-none print:p-0" id="invoice-preview">
+        <div className="bg-[#ffffff] rounded-xl shadow-sm border border-[#f3f4f6] p-8 lg:col-span-2 print:col-span-3 print:shadow-none print:border-none print:p-0" id="invoice-preview">
           
           {/* Header */}
-          <div className="flex justify-between items-start border-b border-gray-200 pb-6 mb-6">
+          <div className="flex justify-between items-start border-b border-[#e5e7eb] pb-6 mb-6">
             <div>
-              <h2 className="text-3xl font-bold text-gray-900">INVOICE</h2>
-              <p className="text-gray-500 mt-1">#{invoiceNumber}</p>
+              <h2 className="text-3xl font-bold text-[#111827]">INVOICE</h2>
+              <p className="text-[#6b7280] mt-1">#{invoiceNumber}</p>
             </div>
             <div className="text-right">
               {logoUrl ? (
                 <img src={logoUrl} alt="Company Logo" className="h-12 object-contain ml-auto mb-2" />
               ) : (
-                <h3 className="font-bold text-gray-900 text-xl">স্টুডিও প্রো</h3>
+                <h3 className="font-bold text-[#111827] text-xl">স্টুডিও প্রো</h3>
               )}
-              <p className="text-gray-600 text-sm mt-1">১২৩ স্টুডিও রোড, ঢাকা</p>
-              <p className="text-gray-600 text-sm">contact@studiopro.com</p>
-              <p className="text-gray-600 text-sm">+880 1234 567890</p>
+              <p className="text-[#4b5563] text-sm mt-1">১২৩ স্টুডিও রোড, ঢাকা</p>
+              <p className="text-[#4b5563] text-sm">contact@studiopro.com</p>
+              <p className="text-[#4b5563] text-sm">+880 1234 567890</p>
             </div>
           </div>
 
           {/* Client & Dates */}
           <div className="flex justify-between items-start mb-8">
             <div>
-              <p className="text-sm text-gray-500 font-medium mb-1">প্রাপক:</p>
+              <p className="text-sm text-[#6b7280] font-medium mb-1">প্রাপক:</p>
               {selectedClient ? (
                 <>
-                  <p className="font-bold text-gray-900">{selectedClient.name}</p>
-                  <p className="text-gray-600">{selectedClient.company}</p>
-                  {selectedClient.email && <p className="text-gray-600 text-sm">{selectedClient.email}</p>}
-                  {selectedClient.phone && <p className="text-gray-600 text-sm">{selectedClient.phone}</p>}
+                  <p className="font-bold text-[#111827]">{selectedClient.name}</p>
+                  <p className="text-[#4b5563]">{selectedClient.company}</p>
+                  {selectedClient.email && <p className="text-[#4b5563] text-sm">{selectedClient.email}</p>}
+                  {selectedClient.phone && <p className="text-[#4b5563] text-sm">{selectedClient.phone}</p>}
                 </>
               ) : (
-                <p className="text-gray-400 italic">ক্লায়েন্ট নির্বাচন করুন</p>
+                <p className="text-[#9ca3af] italic">ক্লায়েন্ট নির্বাচন করুন</p>
               )}
             </div>
             <div className="text-right">
               <div className="mb-2">
-                <p className="text-sm text-gray-500 font-medium inline-block mr-2">তারিখ:</p>
-                <p className="font-medium text-gray-900 inline-block">{invoiceDate ? new Date(invoiceDate).toLocaleDateString('bn-BD') : '-'}</p>
+                <p className="text-sm text-[#6b7280] font-medium inline-block mr-2">তারিখ:</p>
+                <p className="font-medium text-[#111827] inline-block">{invoiceDate ? new Date(invoiceDate).toLocaleDateString('bn-BD') : '-'}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-500 font-medium inline-block mr-2">মেয়াদ:</p>
-                <p className="font-medium text-gray-900 inline-block">{dueDate ? new Date(dueDate).toLocaleDateString('bn-BD') : '-'}</p>
+                <p className="text-sm text-[#6b7280] font-medium inline-block mr-2">মেয়াদ:</p>
+                <p className="font-medium text-[#111827] inline-block">{dueDate ? new Date(dueDate).toLocaleDateString('bn-BD') : '-'}</p>
               </div>
             </div>
           </div>
 
           {/* Project Info */}
           {selectedProject && (
-            <div className="mb-6 bg-gray-50 p-4 rounded-lg">
-              <p className="text-sm text-gray-500 font-medium mb-1">প্রজেক্ট:</p>
-              <p className="font-bold text-gray-900">{selectedProject.title}</p>
+            <div className="mb-6 bg-[#f9fafb] p-4 rounded-lg">
+              <p className="text-sm text-[#6b7280] font-medium mb-1">প্রজেক্ট:</p>
+              <p className="font-bold text-[#111827]">{selectedProject.title}</p>
             </div>
           )}
 
@@ -554,17 +554,17 @@ export default function InvoiceSystem() {
           <div className="mb-8">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b-2 border-gray-200">
-                  <th className="py-3 text-sm font-semibold text-gray-700">বিবরণ</th>
-                  <th className="py-3 text-sm font-semibold text-gray-700 text-center w-24">পরিমাণ</th>
-                  <th className="py-3 text-sm font-semibold text-gray-700 text-right w-32">রেট (৳)</th>
-                  <th className="py-3 text-sm font-semibold text-gray-700 text-right w-32">মোট (৳)</th>
+                <tr className="border-b-2 border-[#e5e7eb]">
+                  <th className="py-3 text-sm font-semibold text-[#374151]">বিবরণ</th>
+                  <th className="py-3 text-sm font-semibold text-[#374151] text-center w-24">পরিমাণ</th>
+                  <th className="py-3 text-sm font-semibold text-[#374151] text-right w-32">রেট (৳)</th>
+                  <th className="py-3 text-sm font-semibold text-[#374151] text-right w-32">মোট (৳)</th>
                   <th className="py-3 w-10 print:hidden"></th>
                 </tr>
               </thead>
               <tbody>
                 {items.map((item, index) => (
-                  <tr key={item.id} className="border-b border-gray-100 align-top">
+                  <tr key={item.id} className="border-b border-[#f3f4f6] align-top">
                     <td className="py-3 pr-4">
                       <textarea 
                         value={item.description}
@@ -578,7 +578,7 @@ export default function InvoiceSystem() {
                           e.target.style.height = e.target.scrollHeight + 'px';
                         }}
                         placeholder="কাজের বিবরণ..."
-                        className="w-full bg-transparent border-none focus:ring-0 p-0 text-gray-900 resize-none overflow-hidden"
+                        className="w-full bg-transparent border-none focus:ring-0 p-0 text-[#111827] resize-none overflow-hidden"
                         rows={1}
                         style={{ minHeight: '24px' }}
                       />
@@ -588,7 +588,7 @@ export default function InvoiceSystem() {
                         type="number" 
                         value={item.quantity}
                         onChange={(e) => handleItemChange(item.id, 'quantity', Number(e.target.value))}
-                        className="w-full bg-transparent border-none focus:ring-0 p-0 text-center text-gray-900"
+                        className="w-full bg-transparent border-none focus:ring-0 p-0 text-center text-[#111827]"
                         min="1"
                       />
                     </td>
@@ -597,17 +597,17 @@ export default function InvoiceSystem() {
                         type="number" 
                         value={item.rate}
                         onChange={(e) => handleItemChange(item.id, 'rate', Number(e.target.value))}
-                        className="w-full bg-transparent border-none focus:ring-0 p-0 text-right text-gray-900"
+                        className="w-full bg-transparent border-none focus:ring-0 p-0 text-right text-[#111827]"
                         min="0"
                       />
                     </td>
-                    <td className="py-3 text-right font-medium text-gray-900">
+                    <td className="py-3 text-right font-medium text-[#111827]">
                       {(item.quantity * item.rate).toLocaleString('bn-BD')}
                     </td>
                     <td className="py-3 text-right print:hidden">
                       <button 
                         onClick={() => handleRemoveItem(item.id)}
-                        className="text-red-400 hover:text-red-600"
+                        className="text-[#f87171] hover:text-[#dc2626]"
                       >
                         <Trash2 size={16} />
                       </button>
@@ -619,7 +619,7 @@ export default function InvoiceSystem() {
             
             <button 
               onClick={handleAddItem}
-              className="mt-4 text-sm text-indigo-600 font-medium flex items-center hover:text-indigo-800 print:hidden"
+              className="mt-4 text-sm text-[#4f46e5] font-medium flex items-center hover:text-[#3730a3] print:hidden"
             >
               <Plus size={16} className="mr-1" /> নতুন আইটেম যোগ করুন
             </button>
@@ -628,23 +628,23 @@ export default function InvoiceSystem() {
           {/* Totals */}
           <div className="flex justify-end">
             <div className="w-64 space-y-3">
-              <div className="flex justify-between text-gray-600">
+              <div className="flex justify-between text-[#4b5563]">
                 <span>সাবটোটাল:</span>
                 <span>৳ {subtotal.toLocaleString('bn-BD')}</span>
               </div>
               {taxRate > 0 && (
-                <div className="flex justify-between text-gray-600">
+                <div className="flex justify-between text-[#4b5563]">
                   <span>ভ্যাট/ট্যাক্স ({taxRate}%):</span>
                   <span>৳ {taxAmount.toLocaleString('bn-BD')}</span>
                 </div>
               )}
               {discount > 0 && (
-                <div className="flex justify-between text-gray-600">
+                <div className="flex justify-between text-[#4b5563]">
                   <span>ডিসকাউন্ট:</span>
-                  <span className="text-red-600">- ৳ {discount.toLocaleString('bn-BD')}</span>
+                  <span className="text-[#dc2626]">- ৳ {discount.toLocaleString('bn-BD')}</span>
                 </div>
               )}
-              <div className="flex justify-between text-xl font-bold text-gray-900 border-t border-gray-200 pt-3">
+              <div className="flex justify-between text-xl font-bold text-[#111827] border-t border-[#e5e7eb] pt-3">
                 <span>সর্বমোট:</span>
                 <span>৳ {total.toLocaleString('bn-BD')}</span>
               </div>
@@ -652,7 +652,7 @@ export default function InvoiceSystem() {
           </div>
 
           {/* Footer */}
-          <div className="mt-16 pt-8 border-t border-gray-200 text-center text-gray-500 text-sm">
+          <div className="mt-16 pt-8 border-t border-[#e5e7eb] text-center text-[#6b7280] text-sm">
             <p>আমাদের সাথে কাজ করার জন্য ধন্যবাদ!</p>
           </div>
 

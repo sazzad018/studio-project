@@ -117,7 +117,11 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (Array.isArray(apiCategories)) setCategories(apiCategories);
         if (Array.isArray(apiInvoices)) setInvoices(apiInvoices);
       } catch (error) {
-        console.warn('API connection failed. Using local/mock data.', error);
+        if (!USE_MOCK_FALLBACK) {
+          console.warn('API connection failed. Using local/mock data.', error);
+        } else {
+          console.log('Using local storage/mock data (API connection bypassed or failed).');
+        }
         // If USE_MOCK_FALLBACK is true, we just keep the initial state (localStorage/mock)
       }
     };

@@ -1,4 +1,4 @@
-import { API_BASE_URL } from '../config';
+import { API_BASE_URL, USE_MOCK_FALLBACK } from '../config';
 import { Client, Model, Content, ScheduleEvent, Project, Invoice } from '../data/mockData';
 
 // Helper function for API calls
@@ -27,7 +27,9 @@ async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> 
     
     return await response.json();
   } catch (error) {
-    console.error(`API Call failed for ${endpoint}:`, error);
+    if (!USE_MOCK_FALLBACK) {
+      console.error(`API Call failed for ${endpoint}:`, error);
+    }
     throw error;
   }
 }
