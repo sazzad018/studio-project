@@ -70,6 +70,13 @@ export default function InvoiceSystem() {
     window.print();
   };
 
+  const handlePrintInvoice = (inv: any) => {
+    handleViewInvoice(inv);
+    setTimeout(() => {
+      window.print();
+    }, 500);
+  };
+
   const handleViewInvoice = (inv: any) => {
     setSelectedClientId(inv.clientId);
     setSelectedProjectId(inv.projectId || '');
@@ -316,9 +323,16 @@ export default function InvoiceSystem() {
                               <FileText size={18} />
                             </button>
                             <button 
+                              onClick={() => handlePrintInvoice(inv)}
+                              title="প্রিন্ট / সেভ অ্যাজ পিডিএফ"
+                              className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                            >
+                              <Printer size={18} />
+                            </button>
+                            <button 
                               onClick={() => handleDownloadPDF(inv)}
                               disabled={isDownloading}
-                              title="পিডিএফ ডাউনলোড"
+                              title="সরাসরি ডাউনলোড"
                               className="p-1.5 text-gray-600 hover:bg-gray-100 rounded-md transition-colors disabled:opacity-50"
                             >
                               <Download size={18} />
@@ -366,7 +380,7 @@ export default function InvoiceSystem() {
                   onClick={handlePrint}
                   className="bg-gray-900 text-white px-3 py-1.5 rounded-lg flex items-center text-sm font-medium hover:bg-gray-800 transition-colors"
                 >
-                  <Printer size={16} className="mr-1" /> প্রিন্ট
+                  <Printer size={16} className="mr-1" /> প্রিন্ট / সেভ পিডিএফ
                 </button>
               </div>
             </div>
