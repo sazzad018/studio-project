@@ -7,6 +7,7 @@ import Models from './components/Models';
 import Scheduling from './components/Scheduling';
 import ProjectDetails from './components/ProjectDetails';
 import InvoiceSystem from './components/InvoiceSystem';
+import DailyTasks from './components/DailyTasks';
 import { DataProvider } from './context/DataContext';
 
 export default function App() {
@@ -31,6 +32,8 @@ export default function App() {
         return <Scheduling />;
       case 'invoice':
         return <InvoiceSystem />;
+      case 'daily-tasks':
+        return <DailyTasks />;
       default:
         return <Dashboard />;
     }
