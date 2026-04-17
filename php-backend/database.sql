@@ -62,4 +62,12 @@ CREATE TABLE categories (
     name VARCHAR(100) PRIMARY KEY
 );
 
+CREATE TABLE daily_tasks (
+    date_key VARCHAR(10) NOT NULL,
+    step_id VARCHAR(50) NOT NULL,
+    completed BOOLEAN NOT NULL DEFAULT 0,
+    notes TEXT,
+    PRIMARY KEY (date_key, step_id)
+);
+
 INSERT INTO categories (name) VALUES ('Fashion'), ('Commercial'), ('Editorial'), ('Fitness'), ('Parts');

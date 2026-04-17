@@ -42,6 +42,7 @@ export const api = {
   getSchedule: () => fetchApi<ScheduleEvent[]>('/get_schedule.php'),
   getCategories: () => fetchApi<string[]>('/get_categories.php'),
   getInvoices: () => fetchApi<Invoice[]>('/get_invoices.php'),
+  getDailyTasks: () => fetchApi<any>('/get_daily_tasks.php'),
 
   // POST Requests (আপনার PHP ফাইলগুলো JSON ডাটা রিসিভ করে ডাটাবেজে সেভ করবে)
   addClient: (data: Omit<Client, 'id' | 'projects'>) => 
@@ -70,4 +71,7 @@ export const api = {
     
   deleteInvoice: (id: string) => 
     fetchApi<{success: boolean}>('/delete_invoice.php', { method: 'POST', body: JSON.stringify({ id }) }),
+    
+  saveDailyTask: (date_key: string, step_id: string, completed: boolean, notes: string) => 
+    fetchApi<{success: boolean}>('/save_daily_task.php', { method: 'POST', body: JSON.stringify({ date_key, step_id, completed, notes }) }),
 };

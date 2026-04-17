@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Check, Edit3, X, Save, Plus, LayoutGrid, Route } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { api } from '../services/api';
 
 const WORKFLOW_STEPS = [
   { id: 'step1', title: '১. পোস্ট করা', shortLabel: 'পোস্ট করা', description: 'আজকের পোস্টগুলো শিডিউল বা পাবলিশ করা' },
@@ -26,7 +27,7 @@ const toLocalISOString = (d: Date) => {
 // ==============================
 // ROADMAP VIEW COMPONENT
 // ==============================
-function RoadmapView({ allData, setAllData }: { allData: AllData, setAllData: React.Dispatch<React.SetStateAction<AllData>> }) {
+function RoadmapView({ allData, updateTask }: { allData: AllData, updateTask: (d: string, s: string, c: boolean, n: string) => void }) {
   const [selectedDate, setSelectedDate] = useState(() => {
     const d = new Date(); d.setHours(0, 0, 0, 0); return d;
   });
@@ -49,11 +50,8 @@ function RoadmapView({ allData, setAllData }: { allData: AllData, setAllData: Re
 
   const toggleComplete = (stepId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    setAllData(prev => {
-      const dayData = prev[dateKey] || {};
-      const stepData = dayData[stepId] || { completed: false, notes: '' };
-      return { ...prev, [dateKey]: { ...dayData, [stepId]: { ...stepData, completed: !stepData.completed } } };
-    });
+    const stepData = todayData[stepId] || { completed: false, notes: '' };
+    updateTask(dateKey, stepId, !stepData.completed, stepData.notes);
   };
 
   const openNotes = (stepId: string) => {
@@ -64,11 +62,8 @@ function RoadmapView({ allData, setAllData }: { allData: AllData, setAllData: Re
 
   const saveNotes = () => {
     if (activeStepId) {
-      setAllData(prev => {
-        const dayData = prev[dateKey] || {};
-        const stepData = dayData[activeStepId] || { completed: false, notes: '' };
-        return { ...prev, [dateKey]: { ...dayData, [activeStepId]: { ...stepData, notes: editNotes } } };
-      });
+      const stepData = todayData[activeStepId] || { completed: false, notes: '' };
+      updateTask(dateKey, activeStepId, stepData.completed, editNotes);
     }
     setIsModalOpen(false);
   };
@@ -222,7 +217,7 @@ function RoadmapView({ allData, setAllData }: { allData: AllData, setAllData: Re
 // ==============================
 // GRID VIEW COMPONENT
 // ==============================
-function GridView({ allData, setAllData }: { allData: AllData, setAllData: React.Dispatch<React.SetStateAction<AllData>> }) {
+function GridView({ allData, updateTask }: { allData: AllData, updateTask: (d: string, s: string, c: boolean, n: string) => void }) {
   const [startDate, setStartDate] = useState(() => {
     const d = new Date(); d.setHours(0, 0, 0, 0); return d;
   });
@@ -250,16 +245,7 @@ function GridView({ allData, setAllData }: { allData: AllData, setAllData: React
 
   const handleSaveCell = () => {
     if (editingCell) {
-      setAllData(prev => {
-        const dayData = prev[editingCell.date] || {};
-        return {
-          ...prev,
-          [editingCell.date]: {
-            ...dayData,
-            [editingCell.stepId]: { completed: editCompleted, notes: editNotes }
-          }
-        };
-      });
+      updateTask(editingCell.date, editingCell.stepId, editCompleted, editNotes);
       setIsModalOpen(false);
     }
   };
@@ -403,16 +389,52 @@ function GridView({ allData, setAllData }: { allData: AllData, setAllData: React
 // MAIN PARENT WRAPPER
 // ==============================
 export default function DailyTasks() {
-  const [allData, setAllData] = useState<AllData>(() => {
-    const saved = localStorage.getItem('studio_roadmap_tasks');
-    return saved ? JSON.parse(saved) : {};
-  });
-  
+  const [allData, setAllData] = useState<AllData>({});
+  const [isLoading, setIsLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'roadmap'|'grid'>('roadmap');
 
   useEffect(() => {
-    localStorage.setItem('studio_roadmap_tasks', JSON.stringify(allData));
-  }, [allData]);
+    // Load from DB via API, fallback to localStorage if it fails
+    api.getDailyTasks()
+      .then(data => {
+        setAllData(data || {});
+        setIsLoading(false);
+      })
+      .catch(err => {
+        console.error("Failed to load daily tasks from API, using local storage:", err);
+        const saved = localStorage.getItem('studio_roadmap_tasks');
+        setAllData(saved ? JSON.parse(saved) : {});
+        setIsLoading(false);
+      });
+  }, []);
+
+  const updateTask = async (dateKey: string, stepId: string, completed: boolean, notes: string) => {
+    // Optimistic UI update
+    setAllData(prev => {
+      const dayData = prev[dateKey] || {};
+      const newAllData = {
+        ...prev,
+        [dateKey]: {
+          ...dayData,
+          [stepId]: { completed, notes }
+        }
+      };
+      // Backup to local storage
+      localStorage.setItem('studio_roadmap_tasks', JSON.stringify(newAllData));
+      return newAllData;
+    });
+
+    // Save to Database via API
+    try {
+      await api.saveDailyTask(dateKey, stepId, completed, notes);
+    } catch (err) {
+      console.error("Failed to save daily task to database:", err);
+    }
+  };
+
+  if (isLoading) {
+    return <div className="flex justify-center py-20"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div></div>;
+  }
 
   return (
     <div className="space-y-6">
@@ -447,9 +469,9 @@ export default function DailyTasks() {
 
       {/* Render selected view and pass the data state */}
       {viewMode === 'roadmap' ? (
-        <RoadmapView allData={allData} setAllData={setAllData} />
+        <RoadmapView allData={allData} updateTask={updateTask} />
       ) : (
-        <GridView allData={allData} setAllData={setAllData} />
+        <GridView allData={allData} updateTask={updateTask} />
       )}
     </div>
   );
