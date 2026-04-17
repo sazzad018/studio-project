@@ -31,6 +31,8 @@ if($data && isset($data->projectId)) {
     if (isset($data->modelPayment)) { $fields[] = "modelPayment = ?"; $values[] = $data->modelPayment; }
     if (isset($data->extraExpenses)) { $fields[] = "extraExpenses = ?"; $values[] = $data->extraExpenses; }
     if (isset($data->contentLog)) { $fields[] = "contentLog = ?"; $values[] = json_encode($data->contentLog); }
+    if (isset($data->startDate)) { $fields[] = "startDate = ?"; $values[] = $data->startDate; }
+    if (isset($data->endDate)) { $fields[] = "endDate = ?"; $values[] = $data->endDate; }
     
     if (count($fields) > 0) {
         $values[] = $projectId;

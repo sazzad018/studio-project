@@ -23,6 +23,8 @@ export type Project = {
   thumbnailUrl?: string;
   script?: string;
   link?: string;
+  startDate?: string;
+  endDate?: string;
 };
 
 export type Model = {
@@ -75,6 +77,7 @@ export type Invoice = {
   discount: number;
   total: number;
   status: 'Paid' | 'Unpaid' | 'Overdue';
+  notes?: string;
 };
 
 export const mockModels: Model[] = [

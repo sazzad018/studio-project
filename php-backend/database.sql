@@ -18,6 +18,16 @@ CREATE TABLE projects (
     status VARCHAR(50) NOT NULL,
     dueDate VARCHAR(50) NOT NULL,
     budget DECIMAL(10, 2) NOT NULL,
+    category VARCHAR(100),
+    thumbnailUrl TEXT,
+    script TEXT,
+    link VARCHAR(255),
+    clientAdvance DECIMAL(10, 2) DEFAULT 0,
+    modelPayment DECIMAL(10, 2) DEFAULT 0,
+    extraExpenses DECIMAL(10, 2) DEFAULT 0,
+    contentLog TEXT,
+    startDate VARCHAR(50),
+    endDate VARCHAR(50),
     FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE CASCADE
 );
 
@@ -58,8 +68,24 @@ CREATE TABLE schedule (
     status VARCHAR(50) NOT NULL
 );
 
-CREATE TABLE categories (
+CREATE TABLE IF NOT EXISTS categories (
     name VARCHAR(100) PRIMARY KEY
+);
+
+CREATE TABLE IF NOT EXISTS invoices (
+    id VARCHAR(50) PRIMARY KEY,
+    clientId VARCHAR(50),
+    projectId VARCHAR(50),
+    invoiceNumber VARCHAR(50),
+    date VARCHAR(50),
+    dueDate VARCHAR(50),
+    items TEXT,
+    subtotal DECIMAL(10, 2),
+    taxRate DECIMAL(5, 2),
+    discount DECIMAL(10, 2),
+    total DECIMAL(10, 2),
+    status VARCHAR(50),
+    notes TEXT
 );
 
 CREATE TABLE daily_tasks (

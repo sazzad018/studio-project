@@ -37,6 +37,7 @@ export default function Sidebar({ currentTab, setCurrentTab }: SidebarProps) {
     { id: 'scheduling', label: 'শিডিউলিং', icon: Calendar },
     { id: 'invoice', label: 'ইনভয়েস', icon: FileText },
     { id: 'daily-tasks', label: 'ডেইলি টাস্ক', icon: ClipboardList },
+    { id: 'terms', label: 'কোম্পানি কন্ডিশন', icon: FileText },
   ];
 
   return (

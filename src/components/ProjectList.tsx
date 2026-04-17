@@ -27,7 +27,9 @@ export default function ProjectList({ onNavigate }: { onNavigate?: (tab: string)
     contentLog: [] as string[],
     thumbnailUrl: '',
     script: '',
-    link: ''
+    link: '',
+    startDate: '',
+    endDate: ''
   });
 
   const allProjects = clients.flatMap(client => 
@@ -45,7 +47,7 @@ export default function ProjectList({ onNavigate }: { onNavigate?: (tab: string)
       const { clientId, ...projectData } = newProject;
       addProject(clientId, projectData);
       setIsModalOpen(false);
-      setNewProject({ clientId: clients[0]?.id || '', title: '', category: categories[0] || '', status: 'Planning', budget: 0, clientAdvance: 0, modelPayment: 0, extraExpenses: 0, models: [], contentLog: [], thumbnailUrl: '', script: '', link: '' });
+      setNewProject({ clientId: clients[0]?.id || '', title: '', category: categories[0] || '', status: 'Planning', budget: 0, clientAdvance: 0, modelPayment: 0, extraExpenses: 0, models: [], contentLog: [], thumbnailUrl: '', script: '', link: '', startDate: '', endDate: '' });
     }
   };
 
@@ -456,6 +458,16 @@ export default function ProjectList({ onNavigate }: { onNavigate?: (tab: string)
             <label className="block text-sm font-medium text-gray-700 mb-1">ভিডিও স্ক্রিপ্ট (ঐচ্ছিক)</label>
             <textarea value={newProject.script || ''} onChange={e => setNewProject({...newProject, script: e.target.value})} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none h-24" placeholder="স্ক্রিপ্ট এখানে লিখুন..." />
           </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">প্রজেক্ট শুরু (ঐচ্ছিক)</label>
+              <input type="date" value={newProject.startDate || ''} onChange={e => setNewProject({...newProject, startDate: e.target.value})} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">প্রজেক্ট শেষ (ঐচ্ছিক)</label>
+              <input type="date" value={newProject.endDate || ''} onChange={e => setNewProject({...newProject, endDate: e.target.value})} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+            </div>
+          </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">প্রজেক্ট লিঙ্ক (ঐচ্ছিক)</label>
             <input type="url" value={newProject.link || ''} onChange={e => setNewProject({...newProject, link: e.target.value})} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="https://..." />
@@ -541,6 +553,16 @@ export default function ProjectList({ onNavigate }: { onNavigate?: (tab: string)
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">ভিডিও স্ক্রিপ্ট (ঐচ্ছিক)</label>
               <textarea value={editingProject.script || ''} onChange={e => setEditingProject({...editingProject, script: e.target.value})} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none h-24" placeholder="স্ক্রিপ্ট এখানে লিখুন..." />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">প্রজেক্ট শুরু (ঐচ্ছিক)</label>
+                <input type="date" value={editingProject.startDate || ''} onChange={e => setEditingProject({...editingProject, startDate: e.target.value})} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">প্রজেক্ট শেষ (ঐচ্ছিক)</label>
+                <input type="date" value={editingProject.endDate || ''} onChange={e => setEditingProject({...editingProject, endDate: e.target.value})} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+              </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">প্রজেক্ট লিঙ্ক (ঐচ্ছিক)</label>

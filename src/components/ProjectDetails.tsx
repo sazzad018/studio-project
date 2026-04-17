@@ -1,6 +1,6 @@
 import React from 'react';
 import { useData } from '../context/DataContext';
-import { ArrowLeft, Calendar, DollarSign, FileText, Users, Briefcase, Camera, Link as LinkIcon, Video } from 'lucide-react';
+import { ArrowLeft, Calendar, DollarSign, FileText, Users, Briefcase, Camera, Link as LinkIcon, Video, Printer } from 'lucide-react';
 
 type ProjectDetailsProps = {
   clientId: string;
@@ -10,6 +10,7 @@ type ProjectDetailsProps = {
 
 export default function ProjectDetails({ clientId, projectId, onBack }: ProjectDetailsProps) {
   const { clients, models } = useData();
+  const [isScriptExpanded, setIsScriptExpanded] = React.useState(false);
 
   const client = clients.find(c => c.id === clientId);
   const project = client?.projects?.find(p => p.id === projectId);
@@ -138,12 +139,71 @@ export default function ProjectDetails({ clientId, projectId, onBack }: ProjectD
             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-6">
               {project.script && (
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
-                    <Video className="w-5 h-5 mr-2 text-purple-600" />
-                    ভিডিও স্ক্রিপ্ট
-                  </h3>
+                  <div className="flex justify-between items-center mb-3">
+                    <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                      <Video className="w-5 h-5 mr-2 text-purple-600" />
+                      ভিডিও স্ক্রিপ্ট
+                    </h3>
+                    <button
+                      onClick={() => {
+                        const printWindow = window.open('', '', 'height=600,width=800');
+                        if (printWindow) {
+                          printWindow.document.write(`
+                            <html>
+                              <head>
+                                <title>ভিডিও স্ক্রিপ্ট - ${project.title}</title>
+                                <style>
+                                  body { font-family: sans-serif; padding: 20px; line-height: 1.6; color: #333; }
+                                  h1 { font-size: 24px; border-bottom: 2px solid #ddd; padding-bottom: 10px; margin-bottom: 20px; }
+                                  p { white-space: pre-wrap; font-size: 16px; }
+                                </style>
+                              </head>
+                              <body>
+                                <h1>ভিডিও স্ক্রিপ্ট - ${project.title}</h1>
+                                <div><p>${project.script?.replace(/\n/g, '<br/>') || ''}</p></div>
+                                <script>
+                                  setTimeout(function() {
+                                    window.print();
+                                    window.close();
+                                  }, 500);
+                                </script>
+                              </body>
+                            </html>
+                          `);
+                          printWindow.document.close();
+                        }
+                      }}
+                      className="text-sm flex items-center text-indigo-600 hover:text-indigo-800 transition-colors font-medium bg-indigo-50 px-3 py-1.5 rounded-lg border border-indigo-100"
+                    >
+                      <Printer className="w-4 h-4 mr-2" /> প্রিন্ট
+                    </button>
+                  </div>
                   <div className="bg-gray-50 p-4 rounded-lg border border-gray-100 whitespace-pre-wrap text-sm text-gray-700">
-                    {project.script}
+                    {project.script.length > 500 && !isScriptExpanded ? (
+                      <>
+                        {project.script.substring(0, 500)}...
+                        <button
+                          onClick={() => setIsScriptExpanded(true)}
+                          className="text-indigo-600 font-medium hover:underline ml-2"
+                        >
+                          আরো দেখুন
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        {project.script}
+                        {project.script.length > 500 && (
+                          <div className="mt-3 text-right">
+                            <button
+                              onClick={() => setIsScriptExpanded(false)}
+                              className="text-indigo-600 font-medium hover:underline inline-block"
+                            >
+                              সংকোচন করুন
+                            </button>
+                          </div>
+                        )}
+                      </>
+                    )}
                   </div>
                 </div>
               )}

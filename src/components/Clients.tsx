@@ -21,7 +21,9 @@ export default function Clients({ onNavigate }: { onNavigate?: (tab: string) => 
     extraExpenses: 0,
     models: [] as string[], 
     contentLog: [] as string[],
-    thumbnailUrl: ''
+    thumbnailUrl: '',
+    startDate: '',
+    endDate: ''
   });
 
   const handleAddClient = (e: React.FormEvent) => {
@@ -36,7 +38,7 @@ export default function Clients({ onNavigate }: { onNavigate?: (tab: string) => 
     if (selectedClient) {
       addProject(selectedClient.id, newProject);
       setIsProjectModalOpen(false);
-      setNewProject({ title: '', category: categories[0] || '', status: 'Planning', budget: 0, clientAdvance: 0, modelPayment: 0, extraExpenses: 0, models: [], contentLog: [], thumbnailUrl: '' });
+      setNewProject({ title: '', category: categories[0] || '', status: 'Planning', budget: 0, clientAdvance: 0, modelPayment: 0, extraExpenses: 0, models: [], contentLog: [], thumbnailUrl: '', startDate: '', endDate: '' });
     }
   };
 
@@ -351,6 +353,16 @@ export default function Clients({ onNavigate }: { onNavigate?: (tab: string) => 
             <select multiple value={newProject.models} onChange={e => setNewProject({...newProject, models: Array.from(e.target.selectedOptions, (option: HTMLOptionElement) => option.value)})} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none h-24">
               {models.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
             </select>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">প্রজেক্ট শুরু (ঐচ্ছিক)</label>
+              <input type="date" value={newProject.startDate || ''} onChange={e => setNewProject({...newProject, startDate: e.target.value})} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">প্রজেক্ট শেষ (ঐচ্ছিক)</label>
+              <input type="date" value={newProject.endDate || ''} onChange={e => setNewProject({...newProject, endDate: e.target.value})} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" />
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">কনটেন্ট লগ (কমা দিয়ে আলাদা করুন)</label>

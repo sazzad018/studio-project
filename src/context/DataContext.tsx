@@ -146,49 +146,54 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const addProject = async (clientId: string, projectData: Omit<Project, 'id'>) => {
+    let createdProject: Project;
     try {
-      const newProject = await api.addProject(clientId, projectData);
-      
-      setClients(clients.map(c => {
-        if (c.id === clientId) {
-          return { ...c, projects: [...c.projects, newProject] };
-        }
-        return c;
-      }));
-
-      // Sync models
-      if (projectData.models && projectData.models.length > 0) {
-        setModels(prevModels => prevModels.map(m => {
-          if (projectData.models.includes(m.id)) {
-            return { ...m, projects: [...m.projects, newProject.id] };
-          }
-          return m;
-        }));
-      }
+      createdProject = await api.addProject(clientId, projectData);
     } catch (error) {
-      if (USE_MOCK_FALLBACK) {
-        const newProject: Project = {
-          ...projectData,
-          id: `p${Date.now()}`,
-        };
-        
-        setClients(clients.map(c => {
-          if (c.id === clientId) {
-            return { ...c, projects: [...c.projects, newProject] };
-          }
-          return c;
-        }));
+      if (!USE_MOCK_FALLBACK) throw error;
+      createdProject = {
+        ...projectData,
+        id: `p${Date.now()}`,
+      };
+    }
 
-        // Sync models
-        if (projectData.models && projectData.models.length > 0) {
-          setModels(prevModels => prevModels.map(m => {
-            if (projectData.models.includes(m.id)) {
-              return { ...m, projects: [...m.projects, newProject.id] };
-            }
-            return m;
-          }));
-        }
+    setClients(clients.map(c => {
+      if (c.id === clientId) {
+        return { ...c, projects: [...c.projects, createdProject] };
       }
+      return c;
+    }));
+
+    // Sync models
+    if (projectData.models && projectData.models.length > 0) {
+      setModels(prevModels => prevModels.map(m => {
+        if (projectData.models.includes(m.id)) {
+          return { ...m, projects: [...m.projects, createdProject.id] };
+        }
+        return m;
+      }));
+    }
+
+    // Auto-schedule options
+    if (projectData.startDate) {
+      addScheduleEvent({
+        title: `Project Start: ${projectData.title}`,
+        date: projectData.startDate,
+        type: 'Shoot',
+        models: projectData.models || [],
+        crew: [],
+        projectId: createdProject.id
+      });
+    }
+    if (projectData.endDate && projectData.endDate !== projectData.startDate) {
+      addScheduleEvent({
+        title: `Project Deadline: ${projectData.title}`,
+        date: projectData.endDate,
+        type: 'Deadline',
+        models: projectData.models || [],
+        crew: [],
+        projectId: createdProject.id
+      });
     }
   };
 
@@ -262,14 +267,14 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const addContent = async (contentData: Omit<Content, 'id'>) => {
     try {
       const newContent = await api.addContent(contentData);
-      setContent([...content, newContent]);
+      setContent(prev => [...prev, newContent]);
     } catch (error) {
       if (USE_MOCK_FALLBACK) {
         const newContent: Content = {
           ...contentData,
           id: `ct${Date.now()}`,
         };
-        setContent([...content, newContent]);
+        setContent(prev => [...prev, newContent]);
       }
     }
   };
@@ -277,14 +282,14 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const addScheduleEvent = async (eventData: Omit<ScheduleEvent, 'id'>) => {
     try {
       const newEvent = await api.addScheduleEvent(eventData);
-      setSchedule([...schedule, newEvent]);
+      setSchedule(prev => [...prev, newEvent]);
     } catch (error) {
       if (USE_MOCK_FALLBACK) {
         const newEvent: ScheduleEvent = {
           ...eventData,
-          id: `s${Date.now()}`,
+          id: `s${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
         };
-        setSchedule([...schedule, newEvent]);
+        setSchedule(prev => [...prev, newEvent]);
       }
     }
   };

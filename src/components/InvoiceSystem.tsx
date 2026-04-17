@@ -25,6 +25,7 @@ export default function InvoiceSystem() {
   const [taxRate, setTaxRate] = useState<number>(0);
   const [discount, setDiscount] = useState<number>(0);
   const [logoUrl, setLogoUrl] = useState<string>(() => localStorage.getItem('invoiceLogo') || '');
+  const [notes, setNotes] = useState<string>('পেমেন্ট ক্লিয়ার করতে হবে। ভিডিও হ্যান্ডওভার করার পর ওই ভিডিওতে অন্য কোন কারেকশন করা যাবে না।');
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [activeTab, setActiveTab] = useState<'create' | 'saved'>('create');
@@ -86,6 +87,9 @@ export default function InvoiceSystem() {
     setItems(inv.items || []);
     setTaxRate(inv.taxRate || 0);
     setDiscount(inv.discount || 0);
+    if (inv.notes !== undefined) {
+      setNotes(inv.notes);
+    }
     setActiveTab('create');
   };
 
@@ -197,7 +201,8 @@ export default function InvoiceSystem() {
         taxRate,
         discount,
         total,
-        status: 'Unpaid'
+        status: 'Unpaid',
+        notes
       });
       
       setSaveSuccess(true);
@@ -491,6 +496,17 @@ export default function InvoiceSystem() {
                 </button>
               )}
             </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">কোম্পানির নোট (শর্তাবলী)</label>
+              <textarea 
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                rows={3}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                placeholder="ইনভয়েসের নিচে প্রদর্শিত নোট..."
+              />
+            </div>
           </div>
         </div>
 
@@ -650,6 +666,14 @@ export default function InvoiceSystem() {
               </div>
             </div>
           </div>
+
+          {/* Notes */}
+          {notes && (
+            <div className="mt-12 text-[#4b5563] text-sm whitespace-pre-wrap">
+              <span className="font-semibold text-[#111827] block mb-1">নোট ও শর্তাবলী:</span>
+              <p>{notes}</p>
+            </div>
+          )}
 
           {/* Footer */}
           <div className="mt-16 pt-8 border-t border-[#e5e7eb] text-center text-[#6b7280] text-sm">
