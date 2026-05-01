@@ -61,40 +61,46 @@ export default function Models() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-gray-900">মডেল-ভিত্তিক বিশ্লেষণ</h1>
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight">মডেল-ভিত্তিক বিশ্লেষণ</h1>
         <button 
           onClick={() => setIsModalOpen(true)}
-          className="bg-purple-600 text-white px-4 py-2 rounded-lg flex items-center hover:bg-purple-700 transition-colors"
+          className="bg-purple-600 text-white px-5 py-2.5 rounded-xl font-bold flex items-center hover:bg-purple-700 hover:shadow-lg hover:shadow-purple-200 transition-all hover:-translate-y-0.5"
         >
           <Plus size={20} className="mr-2" /> নতুন মডেল
         </button>
       </div>
       
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Model List */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="p-4 border-b border-gray-100 bg-gray-50">
-            <h2 className="font-semibold text-gray-700">মডেল তালিকা</h2>
+        <div className="bg-white rounded-3xl shadow-[0_4px_24px_rgba(0,0,0,0.02)] border border-gray-100 overflow-hidden flex flex-col h-[calc(100vh-12rem)] min-h-[500px]">
+          <div className="p-5 border-b border-gray-100 bg-gray-50/50 sticky top-0">
+            <h2 className="font-bold text-gray-800 flex items-center text-lg">
+              <User className="w-5 h-5 mr-2 text-gray-400" />
+              মডেল তালিকা
+            </h2>
           </div>
-          <div className="divide-y divide-gray-100 max-h-[600px] overflow-y-auto">
+          <div className="divide-y divide-gray-50 overflow-y-auto custom-scrollbar flex-1 p-2">
             {models.map((model) => (
               <button
                 key={model.id}
                 onClick={() => setSelectedModel(model)}
-                className={`w-full text-left p-4 hover:bg-gray-50 transition-colors flex items-center space-x-4 ${
-                  selectedModel?.id === model.id ? 'bg-purple-50 border-l-4 border-purple-600' : ''
+                className={`w-full text-left p-4 rounded-xl mb-1 transition-all group flex items-center space-x-4 ${
+                  selectedModel?.id === model.id ? 'bg-purple-600 shadow-md shadow-purple-200 translate-x-1' : 'hover:bg-gray-50 hover:translate-x-1'
                 }`}
               >
-                <img src={model.imageUrl} alt={model.name} className="w-12 h-12 rounded-full object-cover border border-gray-200" />
-                <div>
-                  <h3 className="font-medium text-gray-900">{model.name}</h3>
-                  <p className="text-sm text-gray-500">{model.category}</p>
+                <img src={model.imageUrl} alt={model.name} className="w-14 h-14 rounded-full object-cover border-2 border-white shadow-sm flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <h3 className={`font-bold text-base truncate transition-colors ${selectedModel?.id === model.id ? 'text-white' : 'text-gray-900 group-hover:text-purple-600'}`}>{model.name}</h3>
+                  <p className={`text-sm mt-0.5 truncate transition-colors ${selectedModel?.id === model.id ? 'text-purple-100' : 'text-gray-500'}`}>{model.category}</p>
                 </div>
               </button>
             ))}
             {models.length === 0 && (
-              <div className="p-4 text-center text-gray-500">কোনো মডেল নেই</div>
+              <div className="p-8 text-center text-gray-400 flex flex-col items-center justify-center h-full">
+                <User className="w-12 h-12 mb-3 text-gray-300" />
+                <p className="font-medium">কোনো মডেল নেই</p>
+              </div>
             )}
           </div>
         </div>
@@ -102,38 +108,45 @@ export default function Models() {
         {/* Model Details */}
         <div className="lg:col-span-2 space-y-6">
           {selectedModel ? (
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-              <div className="flex flex-col md:flex-row items-center md:items-start space-y-4 md:space-y-0 md:space-x-6 mb-8">
-                <img src={selectedModel.imageUrl} alt={selectedModel.name} className="w-32 h-32 rounded-xl object-cover border-4 border-white shadow-lg" />
+            <div className="bg-white p-6 md:p-8 rounded-3xl shadow-[0_4px_24px_rgba(0,0,0,0.02)] border border-gray-100 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-purple-50/50 rounded-bl-full -z-10"></div>
+              
+              <div className="flex flex-col md:flex-row items-center md:items-start space-y-6 md:space-y-0 md:space-x-8 mb-8">
+                <div className="relative">
+                  <img src={selectedModel.imageUrl} alt={selectedModel.name} className="w-36 h-36 rounded-2xl object-cover border-4 border-white shadow-xl" />
+                  <div className="absolute -bottom-3 -right-3 bg-white p-2 rounded-xl shadow-lg border border-gray-100">
+                    <Star className="w-6 h-6 text-yellow-400 fill-current" />
+                  </div>
+                </div>
                 <div className="flex-1 text-center md:text-left">
-                  <h2 className="text-3xl font-bold text-gray-900 mb-2">{selectedModel.name}</h2>
-                  <div className="flex flex-wrap justify-center md:justify-start gap-3 text-sm">
-                    <span className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full font-medium flex items-center">
-                      <Star className="w-4 h-4 mr-1" /> {selectedModel.category}
+                  <h2 className="text-3xl font-black text-gray-900 tracking-tight leading-tight mb-3">{selectedModel.name}</h2>
+                  <div className="flex flex-wrap justify-center md:justify-start gap-3 mb-5">
+                    <span className="px-4 py-1.5 bg-purple-50 text-purple-700 rounded-full text-sm font-bold border border-purple-100 flex items-center">
+                      <Briefcase className="w-4 h-4 mr-1.5" /> {selectedModel.category}
                     </span>
-                    <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full font-medium flex items-center">
-                      <DollarSign className="w-4 h-4 mr-1" /> ৳{selectedModel.hourlyRate.toLocaleString()}/ঘন্টা
+                    <span className="px-4 py-1.5 bg-emerald-50 text-emerald-700 rounded-full text-sm font-bold border border-emerald-100 flex items-center">
+                      <DollarSign className="w-4 h-4 mr-1.5" /> ৳{selectedModel.hourlyRate.toLocaleString()}/ঘন্টা
                     </span>
                   </div>
                   
                   {(selectedModel.phone || selectedModel.email || selectedModel.facebook) && (
-                    <div className="mt-4 flex flex-col items-center md:items-start space-y-2 text-sm text-gray-600">
+                    <div className="flex flex-col items-center md:items-start space-y-3 p-4 bg-gray-50 rounded-2xl border border-gray-100">
                       {selectedModel.phone && (
-                        <div className="flex items-center">
-                          <Phone className="w-4 h-4 mr-2 text-gray-400" />
+                        <div className="flex items-center text-sm font-medium text-gray-700">
+                          <Phone className="w-4 h-4 mr-2.5 text-gray-400" />
                           <a href={`tel:${selectedModel.phone}`} className="hover:text-purple-600 transition-colors">{selectedModel.phone}</a>
                         </div>
                       )}
                       {selectedModel.email && (
-                        <div className="flex items-center">
-                          <Mail className="w-4 h-4 mr-2 text-gray-400" />
+                        <div className="flex items-center text-sm font-medium text-gray-700">
+                          <Mail className="w-4 h-4 mr-2.5 text-gray-400" />
                           <a href={`mailto:${selectedModel.email}`} className="hover:text-purple-600 transition-colors">{selectedModel.email}</a>
                         </div>
                       )}
                       {selectedModel.facebook && (
-                        <div className="flex items-center">
-                          <Facebook className="w-4 h-4 mr-2 text-gray-400" />
-                          <a href={selectedModel.facebook} target="_blank" rel="noopener noreferrer" className="hover:text-purple-600 transition-colors">Facebook Profile</a>
+                        <div className="flex items-center text-sm font-medium text-gray-700">
+                          <Facebook className="w-4 h-4 mr-2.5 text-gray-400" />
+                          <a href={selectedModel.facebook} target="_blank" rel="noopener noreferrer" className="hover:text-purple-600 transition-colors text-blue-600 hover:underline">ফেসবুক প্রোফাইল</a>
                         </div>
                       )}
                     </div>
@@ -141,12 +154,14 @@ export default function Models() {
                 </div>
               </div>
 
-              <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center border-b pb-2">
-                <Briefcase className="w-5 h-5 mr-2 text-purple-600" />
-                প্রজেক্ট পরিচিতি
-              </h3>
+              <div className="flex justify-between items-center mb-6 pt-6 border-t border-gray-100/60">
+                <h3 className="text-xl font-bold text-gray-900 flex items-center">
+                  <Briefcase className="w-5 h-5 mr-2 text-purple-600" />
+                  প্রজেক্ট পরিচিতি
+                </h3>
+              </div>
               
-              <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {(selectedModel.projects || []).map((projectId) => {
                   const client = clients.find(c => (c.projects || []).some(p => p.id === projectId));
                   const project = client?.projects?.find(p => p.id === projectId);
@@ -154,55 +169,67 @@ export default function Models() {
                   if (!project || !client) return null;
 
                   return (
-                    <div key={project.id} className="border border-gray-100 rounded-lg p-5 bg-gray-50 hover:shadow-md transition-shadow">
-                      <div className="flex justify-between items-start mb-3">
-                        <div>
-                          <h4 className="font-bold text-lg text-gray-900">{project.title}</h4>
-                          <p className="text-sm text-gray-600 flex items-center mt-1">
-                            <User className="w-4 h-4 mr-1 text-gray-400" />
-                            ক্লায়েন্ট: <span className="font-medium ml-1">{client.name} ({client.company})</span>
+                    <div key={project.id} className="border border-gray-100 rounded-2xl p-5 bg-white shadow-sm hover:shadow-md transition-all group">
+                      <div className="flex justify-between items-start mb-4">
+                        <div className="pr-4">
+                          <h4 className="font-extrabold text-lg text-gray-900 leading-tight mb-2">{project.title}</h4>
+                          <p className="text-xs font-medium text-gray-500 flex items-center">
+                            <span className="w-1.5 h-1.5 rounded-full bg-blue-400 mr-1.5 flex-shrink-0"></span>
+                            {client.name} ({client.company})
                           </p>
                         </div>
-                        <span className={`px-3 py-1 text-xs font-bold rounded-full uppercase tracking-wider ${
-                          project.status === 'Completed' ? 'bg-green-100 text-green-800' :
-                          project.status === 'Shooting' ? 'bg-blue-100 text-blue-800' :
-                          'bg-yellow-100 text-yellow-800'
+                        <span className={`px-2.5 py-1 text-[10px] font-extrabold rounded-full uppercase tracking-wider border flex-shrink-0 ${
+                          project.status === 'Completed' ? 'bg-green-100 text-green-800 border-green-200' :
+                          project.status === 'Shooting' ? 'bg-blue-100 text-blue-800 border-blue-200' :
+                          'bg-yellow-100 text-yellow-800 border-yellow-200'
                         }`}>
                           {project.status}
                         </span>
                       </div>
 
                       {project.thumbnailUrl && (
-                        <div className="mb-4">
+                        <div className="mb-4 rounded-xl overflow-hidden border border-gray-100 group-hover:border-gray-200 transition-colors">
                           <img 
                             src={project.thumbnailUrl} 
                             alt={project.title} 
-                            className="w-full h-40 object-cover rounded-lg border border-gray-200"
+                            className="w-full h-32 object-cover transform transition-transform duration-700 group-hover:scale-105"
                             referrerPolicy="no-referrer"
                           />
                         </div>
                       )}
                       
-                      <div className="mt-4 pt-4 border-t border-gray-200">
-                        <h5 className="text-sm font-semibold text-gray-700 mb-2">কাজের বিবরণী:</h5>
-                        <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">
-                          {project.contentLog.map((log, index) => (
-                            <li key={index}>{log}</li>
-                          ))}
-                          {project.contentLog.length === 0 && <li>কোনো লগ নেই</li>}
-                        </ul>
-                      </div>
+                      {canSee('project-content') && (
+                        <div className="mt-4 pt-4 border-t border-gray-100/80">
+                          <h5 className="text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-2">কাজের বিবরণী:</h5>
+                          <ul className="space-y-1.5 text-sm text-gray-600">
+                            {project.contentLog.map((log, index) => (
+                              <li key={index} className="flex items-start">
+                                 <span className="text-gray-300 mr-1.5 mt-0.5">•</span>
+                                 <span>{log}</span>
+                              </li>
+                            ))}
+                            {project.contentLog.length === 0 && <li className="text-gray-400 italic">কোনো লগ নেই</li>}
+                          </ul>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
                 {(!selectedModel.projects || selectedModel.projects.length === 0) && (
-                  <div className="text-center text-gray-500 py-4">কোনো প্রজেক্টে যুক্ত নেই</div>
+                  <div className="col-span-1 md:col-span-2 text-center py-12 bg-gray-50/50 rounded-2xl border border-dashed border-gray-200 flex flex-col items-center justify-center">
+                    <Briefcase className="w-12 h-12 text-gray-300 mb-3" />
+                    <p className="font-bold text-gray-500">কোনো প্রজেক্টে যুক্ত নেই</p>
+                  </div>
                 )}
               </div>
             </div>
           ) : (
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 text-center text-gray-500">
-              মডেল নির্বাচন করুন
+             <div className="bg-white p-12 rounded-3xl shadow-[0_4px_24px_rgba(0,0,0,0.02)] border border-gray-100 flex flex-col items-center justify-center text-center text-gray-500 h-[calc(100vh-12rem)] min-h-[500px]">
+              <div className="w-24 h-24 bg-purple-50 rounded-full flex items-center justify-center mb-6">
+                <User className="w-12 h-12 text-purple-400" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">মডেল নির্বাচন করুন</h2>
+              <p className="text-gray-500 max-w-sm">বাম দিকের তালিকা থেকে একটি মডেল নির্বাচন করুন অথবা নতুন মডেল যোগ করুন।</p>
             </div>
           )}
         </div>

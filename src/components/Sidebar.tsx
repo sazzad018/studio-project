@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
-import { LayoutDashboard, Users, Camera, Image as ImageIcon, Calendar, Briefcase, FileText, Upload, X, ClipboardList } from 'lucide-react';
+import { LayoutDashboard, Users, Camera, Image as ImageIcon, Calendar, Briefcase, FileText, Upload, X, ClipboardList, Shield, LogOut, UserPlus, MessageSquare } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 type SidebarProps = {
   currentTab: string;
@@ -9,6 +10,7 @@ type SidebarProps = {
 export default function Sidebar({ currentTab, setCurrentTab }: SidebarProps) {
   const [appLogo, setAppLogo] = useState<string>(() => localStorage.getItem('appLogo') || '');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { currentUser, logout } = useAuth();
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -32,13 +34,24 @@ export default function Sidebar({ currentTab, setCurrentTab }: SidebarProps) {
   const tabs = [
     { id: 'dashboard', label: 'ড্যাশবোর্ড', icon: LayoutDashboard },
     { id: 'projects', label: 'প্রজেক্ট লিস্ট', icon: Briefcase },
+    { id: 'messages', label: 'মেসেজ বক্স', icon: MessageSquare },
     { id: 'clients', label: 'ক্লায়েন্ট প্রোফাইল', icon: Users },
     { id: 'models', label: 'মডেল বিশ্লেষণ', icon: Camera },
     { id: 'scheduling', label: 'শিডিউলিং', icon: Calendar },
+    { id: 'lead', label: 'লিড', icon: UserPlus },
     { id: 'invoice', label: 'ইনভয়েস', icon: FileText },
     { id: 'daily-tasks', label: 'ডেইলি টাস্ক', icon: ClipboardList },
     { id: 'terms', label: 'কোম্পানি কন্ডিশন', icon: FileText },
-  ];
+    { id: 'task-manager', label: 'টাস্ক ম্যানেজার', icon: ClipboardList },
+    { id: 'portfolio', label: 'স্টুডিও পোর্টফোলিও', icon: ImageIcon },
+    { id: 'employees', label: 'এমপ্লয়ি লিস্ট', icon: Users },
+  ].filter(item => 
+    currentUser?.role === 'admin' ? true : currentUser?.permissions?.includes(item.id)
+  );
+
+  if (currentUser?.role === 'admin' || currentUser?.permissions?.includes('users')) {
+    tabs.push({ id: 'users', label: 'ইউজার ম্যানেজমেন্ট', icon: Shield });
+  }
 
   return (
     <div className="w-64 bg-white border-r border-gray-200 h-screen fixed left-0 top-0 flex flex-col">
@@ -97,8 +110,18 @@ export default function Sidebar({ currentTab, setCurrentTab }: SidebarProps) {
           );
         })}
       </nav>
-      <div className="p-4 border-t border-gray-200 text-sm text-gray-500 text-center">
-        &copy; 2026 Studio Pro
+      <div className="p-4 border-t border-gray-200">
+        <div className="flex items-center justify-between mb-4 px-2">
+          <div className="text-sm font-medium text-gray-900 truncate pr-2">
+            {currentUser?.name}
+          </div>
+          <button onClick={logout} className="text-gray-500 hover:text-red-600 transition-colors" title="লগআউট">
+            <LogOut size={18} />
+          </button>
+        </div>
+        <div className="text-xs text-gray-500 text-center">
+          &copy; 2026 Studio Pro
+        </div>
       </div>
     </div>
   );

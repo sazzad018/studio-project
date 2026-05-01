@@ -9,12 +9,53 @@ import ProjectDetails from './components/ProjectDetails';
 import InvoiceSystem from './components/InvoiceSystem';
 import DailyTasks from './components/DailyTasks';
 import TermsConditions from './components/TermsConditions';
+import TaskManager from './components/TaskManager';
+import StudioPortfolio from './components/StudioPortfolio';
+import EmployeeList from './components/EmployeeList';
+import UserManagement from './components/UserManagement';
+import Login from './components/Login';
+import LeadManagement from './components/LeadManagement';
+import ClientPortal from './components/ClientPortal';
+import Messages from './components/Messages';
 import { DataProvider } from './context/DataContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 
-export default function App() {
+function AppContent() {
+  const { currentUser } = useAuth();
+  const urlParams = new URLSearchParams(window.location.search);
+  const clientPortalId = urlParams.get('client-portal');
+
+  if (clientPortalId) {
+    return (
+      <DataProvider>
+        <ClientPortal clientId={clientPortalId} />
+      </DataProvider>
+    );
+  }
+
   const [currentTab, setCurrentTab] = useState('dashboard');
 
+  if (!currentUser) {
+    return <Login />;
+  }
+
+  const hasAccess = (tabId: string) => {
+    if (currentUser?.role === 'admin') return true;
+    if (tabId === 'users') return false;
+    if (tabId === 'project-details') return currentUser?.permissions?.includes('projects') || currentUser?.permissions?.includes('clients');
+    return currentUser?.permissions?.includes(tabId);
+  };
+
   const renderContent = () => {
+    // Basic redirect if not allowed to view standard tabs (dashboard shouldn't be blocked entirely, but fallback if everything restricted).
+    if (!hasAccess(currentTab.split(':')[0]) && currentTab !== 'dashboard') {
+      return (
+        <div className="flex h-full items-center justify-center text-red-500 font-medium">
+          আপনার এই পেজটি দেখার অনুমতি নেই।
+        </div>
+      );
+    }
+    
     if (currentTab.startsWith('project-details:')) {
       const [, clientId, projectId, source] = currentTab.split(':');
       return <ProjectDetails clientId={clientId} projectId={projectId} onBack={() => setCurrentTab(source || 'clients')} />;
@@ -25,6 +66,8 @@ export default function App() {
         return <Dashboard />;
       case 'projects':
         return <ProjectList onNavigate={(tab) => setCurrentTab(tab)} />;
+      case 'messages':
+        return <Messages />;
       case 'clients':
         return <Clients onNavigate={(tab) => setCurrentTab(tab)} />;
       case 'models':
@@ -37,6 +80,16 @@ export default function App() {
         return <DailyTasks />;
       case 'terms':
         return <TermsConditions />;
+      case 'task-manager':
+        return <TaskManager />;
+      case 'portfolio':
+        return <StudioPortfolio />;
+      case 'employees':
+        return <EmployeeList />;
+      case 'lead':
+        return <LeadManagement />;
+      case 'users':
+        return <UserManagement />;
       default:
         return <Dashboard />;
     }
@@ -55,5 +108,13 @@ export default function App() {
         </div>
       </div>
     </DataProvider>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }

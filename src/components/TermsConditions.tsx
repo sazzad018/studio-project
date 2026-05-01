@@ -93,6 +93,7 @@ Social Ads Studio
 
   const [terms, setTerms] = useState<string>(() => localStorage.getItem('companyTerms') || defaultTerms);
   const [logoUrl, setLogoUrl] = useState<string>(() => localStorage.getItem('companyTermsLogo') || '');
+  const [companyName, setCompanyName] = useState<string>(() => localStorage.getItem('companyTermsName') || 'Social Ads Studio');
   const [isEditing, setIsEditing] = useState(false);
   const [message, setMessage] = useState<{text: string, type: 'error' | 'success'} | null>(null);
 
@@ -111,6 +112,7 @@ Social Ads Studio
 
   const handleSave = () => {
     localStorage.setItem('companyTerms', terms);
+    localStorage.setItem('companyTermsName', companyName);
     setIsEditing(false);
     setMessage({ text: 'কোম্পানির শর্তাবলী সফলভাবে সেভ করা হয়েছে', type: 'success' });
     setTimeout(() => setMessage(null), 3000);
@@ -161,35 +163,53 @@ Social Ads Studio
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 print:p-0 print:border-none print:shadow-none max-w-4xl mx-auto">
         {/* Header / Logo section */}
         <div className="flex justify-between items-center mb-8 border-b border-gray-200 pb-6 print:border-b-2">
-          <div className="relative group">
-            {logoUrl ? (
-              <div className="relative inline-block">
-                <img src={logoUrl} alt="Company Logo" className="h-20 object-contain max-w-[250px]" />
-                <button
-                  onClick={() => {
-                    setLogoUrl('');
-                    localStorage.removeItem('companyTermsLogo');
-                  }}
-                  className="absolute -top-2 -right-2 bg-red-100 text-red-600 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity print:hidden"
-                  title="লোগো মুছুন"
-                >
-                  <X size={14} />
-                </button>
-              </div>
-            ) : (
-              <div className="print:hidden">
-                <label className="cursor-pointer border-2 border-dashed border-gray-300 rounded-lg px-4 py-3 flex items-center justify-center text-sm text-gray-500 hover:border-indigo-500 hover:text-indigo-600 transition-colors">
-                  <Upload size={18} className="mr-2" />
-                  <span>লোগো আপলোড করুন</span>
-                  <input 
-                    type="file" 
-                    accept="image/*"
-                    onChange={handleLogoUpload}
-                    className="hidden"
-                  />
-                </label>
-              </div>
-            )}
+          <div className="flex items-center space-x-6">
+            <div className="relative group">
+              {logoUrl ? (
+                <div className="relative inline-block w-32 h-20 flex items-center justify-center">
+                  <img src={logoUrl} alt="Company Logo" className="max-h-full max-w-full object-contain" />
+                  <button
+                    onClick={() => {
+                      setLogoUrl('');
+                      localStorage.removeItem('companyTermsLogo');
+                    }}
+                    className="absolute -top-2 -right-2 bg-red-100 text-red-600 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity print:hidden"
+                    title="লোগো মুছুন"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              ) : (
+                <div className="print:hidden w-32">
+                  <label className="cursor-pointer border-2 border-dashed border-gray-300 rounded-lg h-20 flex items-center justify-center text-xs text-gray-500 hover:border-indigo-500 hover:text-indigo-600 transition-colors px-2 text-center">
+                    <span className="flex flex-col items-center">
+                      <Upload size={16} className="mb-1" />
+                      লোগো আপলোড
+                    </span>
+                    <input 
+                      type="file" 
+                      accept="image/*"
+                      onChange={handleLogoUpload}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+              )}
+            </div>
+            
+            <div className="pt-2">
+              {isEditing ? (
+                <input
+                  type="text"
+                  value={companyName}
+                  onChange={(e) => setCompanyName(e.target.value)}
+                  placeholder="কোম্পানির নাম লিখুন"
+                  className="text-2xl font-bold text-gray-900 border-b-2 border-indigo-300 focus:border-indigo-600 outline-none w-64 bg-transparent pb-1"
+                />
+              ) : (
+                <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">{companyName}</h1>
+              )}
+            </div>
           </div>
           <div className="text-right">
             <h2 className="text-xl font-bold text-gray-900">Terms & Conditions</h2>

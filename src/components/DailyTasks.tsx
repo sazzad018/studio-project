@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Check, Edit3, X, Save, Plus, LayoutGrid, Route } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { api } from '../services/api';
+import { USE_MOCK_FALLBACK } from '../config';
 
 const WORKFLOW_STEPS = [
   { id: 'step1', title: '১. পোস্ট করা', shortLabel: 'পোস্ট করা', description: 'আজকের পোস্টগুলো শিডিউল বা পাবলিশ করা' },
@@ -401,7 +402,9 @@ export default function DailyTasks() {
         setIsLoading(false);
       })
       .catch(err => {
-        console.error("Failed to load daily tasks from API, using local storage:", err);
+        if (!USE_MOCK_FALLBACK) {
+          console.error("Failed to load daily tasks from API, using local storage:", err);
+        }
         const saved = localStorage.getItem('studio_roadmap_tasks');
         setAllData(saved ? JSON.parse(saved) : {});
         setIsLoading(false);

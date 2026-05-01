@@ -1,13 +1,27 @@
 import React, { useState } from 'react';
 import { useData } from '../context/DataContext';
-import { Briefcase, DollarSign, FileText, Users, Plus, Phone, Mail, Facebook } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { Briefcase, DollarSign, FileText, Users, Plus, Phone, Mail, Facebook, Link as LinkIcon, Copy } from 'lucide-react';
 import Modal from './Modal';
 
 export default function Clients({ onNavigate }: { onNavigate?: (tab: string) => void }) {
   const { clients, models, categories, addClient, addProject } = useData();
+  const { currentUser } = useAuth();
   const [selectedClient, setSelectedClient] = useState(clients[0] || null);
   
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
+
+  const canSee = (permId: string) => {
+    if (currentUser?.role === 'admin' || currentUser?.role === 'manager') return true;
+    return currentUser?.projectPermissions?.includes(permId) ?? false;
+  };
+
+  const clientProjects = (selectedClient?.projects || []).filter(project => {
+    if (currentUser && currentUser.role !== 'admin' && currentUser.role !== 'manager') {
+      return project.contentWriterId === currentUser.id || project.editorId === currentUser.id;
+    }
+    return true;
+  });
   const [newClient, setNewClient] = useState({ name: '', company: '', email: '', phone: '', facebook: '', totalBudget: 0 });
 
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
@@ -23,7 +37,8 @@ export default function Clients({ onNavigate }: { onNavigate?: (tab: string) => 
     contentLog: [] as string[],
     thumbnailUrl: '',
     startDate: '',
-    endDate: ''
+    endDate: '',
+    priority: 'Normal' as 'Normal' | 'Urgent'
   });
 
   const handleAddClient = (e: React.FormEvent) => {
@@ -38,7 +53,7 @@ export default function Clients({ onNavigate }: { onNavigate?: (tab: string) => 
     if (selectedClient) {
       addProject(selectedClient.id, newProject);
       setIsProjectModalOpen(false);
-      setNewProject({ title: '', category: categories[0] || '', status: 'Planning', budget: 0, clientAdvance: 0, modelPayment: 0, extraExpenses: 0, models: [], contentLog: [], thumbnailUrl: '', startDate: '', endDate: '' });
+      setNewProject({ title: '', category: categories[0] || '', status: 'Planning', budget: 0, clientAdvance: 0, modelPayment: 0, extraExpenses: 0, models: [], contentLog: [], thumbnailUrl: '', startDate: '', endDate: '', priority: 'Normal' });
     }
   };
 
@@ -81,39 +96,58 @@ export default function Clients({ onNavigate }: { onNavigate?: (tab: string) => 
     }
   };
 
+  const handleCopyLink = (clientId: string) => {
+    const url = `${window.location.origin}/?client-portal=${clientId}`;
+    navigator.clipboard.writeText(url).then(() => {
+      alert('ক্লায়েন্ট পোর্টাল লিংক কপি করা হয়েছে!');
+    });
+  };
+
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-gray-900">ক্লায়েন্ট প্রোফাইল</h1>
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight">ক্লায়েন্ট প্রোফাইল</h1>
         <button 
           onClick={() => setIsClientModalOpen(true)}
-          className="bg-indigo-600 text-white px-4 py-2 rounded-lg flex items-center hover:bg-indigo-700 transition-colors"
+          className="bg-blue-600 text-white px-5 py-2.5 rounded-xl font-bold flex items-center hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-200 transition-all hover:-translate-y-0.5"
         >
           <Plus size={20} className="mr-2" /> নতুন ক্লায়েন্ট
         </button>
       </div>
       
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Client List */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="p-4 border-b border-gray-100 bg-gray-50">
-            <h2 className="font-semibold text-gray-700">ক্লায়েন্ট তালিকা</h2>
+        <div className="bg-white rounded-3xl shadow-[0_4px_24px_rgba(0,0,0,0.02)] border border-gray-100 overflow-hidden flex flex-col h-[calc(100vh-12rem)] min-h-[500px]">
+          <div className="p-5 border-b border-gray-100 bg-gray-50/50 sticky top-0">
+            <h2 className="font-bold text-gray-800 flex items-center text-lg">
+              <Users className="w-5 h-5 mr-2 text-gray-400" />
+              ক্লায়েন্ট তালিকা
+            </h2>
           </div>
-          <div className="divide-y divide-gray-100 max-h-[600px] overflow-y-auto">
+          <div className="divide-y divide-gray-50 overflow-y-auto custom-scrollbar flex-1 p-2">
             {clients.map((client) => (
               <button
                 key={client.id}
                 onClick={() => setSelectedClient(client)}
-                className={`w-full text-left p-4 hover:bg-gray-50 transition-colors ${
-                  selectedClient?.id === client.id ? 'bg-blue-50 border-l-4 border-blue-600' : ''
+                className={`w-full text-left p-4 rounded-xl mb-1 transition-all group ${
+                  selectedClient?.id === client.id 
+                    ? 'bg-blue-600 shadow-md shadow-blue-200 translate-x-1' 
+                    : 'hover:bg-gray-50 hover:translate-x-1'
                 }`}
               >
-                <h3 className="font-medium text-gray-900">{client.name}</h3>
-                <p className="text-sm text-gray-500">{client.company}</p>
+                <h3 className={`font-bold text-base transition-colors ${
+                  selectedClient?.id === client.id ? 'text-white' : 'text-gray-900 group-hover:text-blue-600'
+                }`}>{client.name}</h3>
+                <p className={`text-sm mt-0.5 transition-colors ${
+                  selectedClient?.id === client.id ? 'text-blue-100' : 'text-gray-500'
+                }`}>{client.company}</p>
               </button>
             ))}
             {clients.length === 0 && (
-              <div className="p-4 text-center text-gray-500">কোনো ক্লায়েন্ট নেই</div>
+              <div className="p-8 text-center text-gray-400 flex flex-col items-center justify-center h-full">
+                <Users className="w-12 h-12 mb-3 text-gray-300" />
+                <p className="font-medium">কোনো ক্লায়েন্ট নেই</p>
+              </div>
             )}
           </div>
         </div>
@@ -121,12 +155,15 @@ export default function Clients({ onNavigate }: { onNavigate?: (tab: string) => 
         {/* Client Details */}
         <div className="lg:col-span-2 space-y-6">
           {selectedClient ? (
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-              <div className="flex justify-between items-start mb-6">
+            <div className="bg-white p-6 md:p-8 rounded-3xl shadow-[0_4px_24px_rgba(0,0,0,0.02)] border border-gray-100 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50/50 rounded-bl-full -z-10"></div>
+              
+              <div className="flex flex-col md:flex-row justify-between items-start mb-8 gap-6">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900">{selectedClient.name}</h2>
-                  <p className="text-gray-500 mb-3">{selectedClient.company}</p>
-                  <div className="space-y-1 text-sm text-gray-600">
+                  <h2 className="text-3xl font-black text-gray-900 tracking-tight leading-tight">{selectedClient.name}</h2>
+                  <p className="text-lg font-medium text-blue-600 mb-5">{selectedClient.company}</p>
+                  
+                  <div className="space-y-3 p-5 bg-gray-50 rounded-2xl border border-gray-100 inline-block w-full text-sm font-medium text-gray-700">
                     {selectedClient.phone && (
                       <p className="flex items-center">
                         <Phone className="w-4 h-4 mr-2 text-gray-400" />
@@ -149,100 +186,125 @@ export default function Clients({ onNavigate }: { onNavigate?: (tab: string) => 
                     )}
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-sm text-gray-500">মোট বাজেট</p>
-                  <p className="text-xl font-bold text-emerald-600">৳{selectedClient.totalBudget.toLocaleString()}</p>
+                <div className="text-right flex flex-col items-end gap-3 w-full md:w-auto">
+                  {canSee('project-financials') && (
+                    <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-end w-full md:w-auto">
+                      <p className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">মোট বাজেট</p>
+                      <p className="text-2xl font-black text-emerald-600">৳{selectedClient.totalBudget?.toLocaleString()}</p>
+                    </div>
+                  )}
+                  <button
+                    onClick={() => handleCopyLink(selectedClient.id)}
+                    className="flex items-center text-sm bg-blue-50 text-blue-700 px-4 py-2.5 rounded-xl hover:bg-blue-600 hover:text-white transition-all font-bold w-full md:w-auto justify-center"
+                  >
+                    <LinkIcon className="w-4 h-4 mr-2" />
+                    পোর্টাল লিংক কপি করুন
+                  </button>
                 </div>
               </div>
 
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+              <div className="flex justify-between items-center mb-6 pt-6 border-t border-gray-100/60">
+                <h3 className="text-xl font-bold text-gray-900 flex items-center">
                   <Briefcase className="w-5 h-5 mr-2 text-blue-600" />
                   প্রজেক্টসমূহ
                 </h3>
                 <button 
                   onClick={() => setIsProjectModalOpen(true)}
-                  className="text-sm text-indigo-600 hover:text-indigo-800 font-medium flex items-center"
+                  className="text-sm bg-indigo-50 text-indigo-700 px-4 py-2 rounded-xl font-bold hover:bg-indigo-600 hover:text-white transition-all flex items-center"
                 >
                   <Plus size={16} className="mr-1" /> নতুন প্রজেক্ট
                 </button>
               </div>
               
-              <div className="space-y-4">
-                {(selectedClient.projects || []).map((project) => (
-                  <div key={project.id} className="border border-gray-100 rounded-lg p-4 bg-gray-50">
-                    <div className="flex justify-between items-center mb-4">
-                      <h4 className="font-semibold text-gray-900">{project.title}</h4>
-                      <span className={`px-3 py-1 text-xs font-medium rounded-full ${
-                        project.status === 'Completed' ? 'bg-green-100 text-green-800' :
-                        project.status === 'Shooting' ? 'bg-blue-100 text-blue-800' :
-                        'bg-yellow-100 text-yellow-800'
-                      }`}>
-                        {project.status}
-                      </span>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {clientProjects.map((project) => (
+                  <div key={project.id} className="border border-gray-100 rounded-2xl p-5 bg-white shadow-sm hover:shadow-md transition-all group">
+                    <div className="flex justify-between items-start mb-4">
+                      <h4 className="font-extrabold text-gray-900 text-lg leading-tight pr-4">
+                        {project.priority === 'Urgent' && <span className="inline-block mr-1.5 text-red-600" title="জরুরী (Urgent)">🔥</span>}
+                        {project.title}
+                      </h4>
+                      <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                        <span className={`px-2.5 py-1 text-[10px] font-extrabold rounded-full uppercase tracking-wider border ${
+                          project.status === 'Completed' ? 'bg-green-100 text-green-800 border-green-200' :
+                          project.status === 'Shooting' ? 'bg-blue-100 text-blue-800 border-blue-200' :
+                          'bg-yellow-100 text-yellow-800 border-yellow-200'
+                        }`}>
+                          {project.status}
+                        </span>
+                      </div>
                     </div>
 
                     {project.thumbnailUrl && (
-                      <div className="mb-4">
+                      <div className="mb-5 rounded-2xl overflow-hidden border border-gray-100 group-hover:border-gray-200 transition-colors">
                         <img 
                           src={project.thumbnailUrl} 
                           alt={project.title} 
-                          className="w-full h-40 object-cover rounded-lg border border-gray-200"
+                          className="w-full h-40 object-cover transform transition-transform duration-700 group-hover:scale-105"
                           referrerPolicy="no-referrer"
                         />
                       </div>
                     )}
                     
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                      <div className="flex flex-col">
-                        <span className="text-xs text-gray-500">মোট বাজেট</span>
-                        <span className="text-sm font-medium text-gray-900">৳{(project.budget || 0).toLocaleString()}</span>
+                    {canSee('project-financials') && (
+                      <div className="grid grid-cols-2 gap-y-3 gap-x-3 mb-5 p-4 bg-gray-50/50 rounded-2xl border border-gray-100">
+                        <div className="flex flex-col">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-0.5">মোট বাজেট</span>
+                          <span className="text-sm font-black text-gray-900">৳{(project.budget || 0).toLocaleString()}</span>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 mb-0.5">অ্যাডভান্স</span>
+                          <span className="text-sm font-black text-emerald-700">৳{(project.clientAdvance || 0).toLocaleString()}</span>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-purple-600 mb-0.5">মডেল পেমেন্ট</span>
+                          <span className="text-sm font-black text-purple-700">৳{(project.modelPayment || 0).toLocaleString()}</span>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-rose-600 mb-0.5">অতিরিক্ত খরচ</span>
+                          <span className="text-sm font-black text-rose-700">৳{(project.extraExpenses || 0).toLocaleString()}</span>
+                        </div>
                       </div>
-                      <div className="flex flex-col">
-                        <span className="text-xs text-gray-500">অ্যাডভান্স</span>
-                        <span className="text-sm font-medium text-emerald-600">৳{(project.clientAdvance || 0).toLocaleString()}</span>
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="text-xs text-gray-500">মডেল পেমেন্ট</span>
-                        <span className="text-sm font-medium text-purple-600">৳{(project.modelPayment || 0).toLocaleString()}</span>
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="text-xs text-gray-500">অতিরিক্ত খরচ</span>
-                        <span className="text-sm font-medium text-red-600">৳{(project.extraExpenses || 0).toLocaleString()}</span>
-                      </div>
-                    </div>
+                    )}
 
-                    <div className="mb-4">
-                      <span className="text-xs text-gray-500 block mb-1">মডেল:</span>
-                      <div className="flex flex-wrap gap-2">
-                        {project.models.map(modelId => {
-                          const model = models.find(m => m.id === modelId);
-                          return model ? (
-                            <span key={modelId} className="text-xs bg-gray-200 px-2 py-1 rounded text-gray-700">
-                              {model.name}
-                            </span>
-                          ) : null;
-                        })}
+                    {canSee('project-team') && (
+                      <div className="mb-5">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 block mb-2">মডেল:</span>
+                        <div className="flex flex-wrap gap-2">
+                          {project.models.map(modelId => {
+                            const model = models.find(m => m.id === modelId);
+                            return model ? (
+                              <span key={modelId} className="text-xs bg-gray-100 border border-gray-200 font-medium px-2.5 py-1 rounded-md text-gray-700">
+                                {model.name}
+                              </span>
+                            ) : null;
+                          })}
+                        </div>
                       </div>
-                    </div>
+                    )}
 
-                    <div className="bg-white p-3 rounded border border-gray-100 mb-4">
-                      <h5 className="text-sm font-medium text-gray-700 mb-2 flex items-center">
-                        <FileText className="w-4 h-4 mr-2 text-gray-400" />
-                        কনটেন্ট লগ
-                      </h5>
-                      <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">
-                        {(project.contentLog || []).map((log, index) => (
-                          <li key={index}>{log}</li>
-                        ))}
-                        {(project.contentLog || []).length === 0 && <li>কোনো লগ নেই</li>}
-                      </ul>
-                    </div>
+                    {canSee('project-content') && (
+                      <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 mb-5">
+                        <h5 className="text-xs font-bold uppercase tracking-wider text-gray-700 mb-3 flex items-center">
+                          <FileText className="w-3.5 h-3.5 mr-1.5 text-gray-500" />
+                          কনটেন্ট লগ
+                        </h5>
+                        <ul className="space-y-2 text-sm text-gray-600">
+                          {(project.contentLog || []).map((log, index) => (
+                            <li key={index} className="flex items-start">
+                               <span className="w-1.5 h-1.5 rounded-full bg-blue-400 mt-1.5 mr-2 flex-shrink-0"></span>
+                               <span>{log}</span>
+                            </li>
+                          ))}
+                          {(project.contentLog || []).length === 0 && <li className="text-gray-400 italic font-medium">কোনো লগ নেই</li>}
+                        </ul>
+                      </div>
+                    )}
 
-                    <div className="flex justify-end">
+                    <div className="flex justify-end pt-2">
                       <button
                         onClick={() => onNavigate?.(`project-details:${selectedClient.id}:${project.id}:clients`)}
-                        className="text-sm bg-indigo-50 text-indigo-600 px-4 py-2 rounded-lg font-medium hover:bg-indigo-100 transition-colors"
+                        className="w-full text-sm bg-indigo-50 text-indigo-700 px-4 py-2.5 rounded-xl font-bold hover:bg-indigo-600 hover:text-white transition-all duration-300"
                       >
                         বিস্তারিত দেখুন
                       </button>
@@ -250,13 +312,20 @@ export default function Clients({ onNavigate }: { onNavigate?: (tab: string) => 
                   </div>
                 ))}
                 {(!selectedClient.projects || selectedClient.projects.length === 0) && (
-                  <div className="text-center text-gray-500 py-4">কোনো প্রজেক্ট নেই</div>
+                  <div className="col-span-1 md:col-span-2 text-center py-12 bg-gray-50/50 rounded-2xl border border-dashed border-gray-200 flex flex-col items-center justify-center">
+                    <Briefcase className="w-12 h-12 text-gray-300 mb-3" />
+                    <p className="font-bold text-gray-500">কোনো প্রজেক্ট নেই</p>
+                  </div>
                 )}
               </div>
             </div>
           ) : (
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 text-center text-gray-500">
-              ক্লায়েন্ট নির্বাচন করুন
+            <div className="bg-white p-12 rounded-3xl shadow-[0_4px_24px_rgba(0,0,0,0.02)] border border-gray-100 flex flex-col items-center justify-center text-center text-gray-500 h-[calc(100vh-12rem)] min-h-[500px]">
+              <div className="w-24 h-24 bg-blue-50 rounded-full flex items-center justify-center mb-6">
+                <Users className="w-12 h-12 text-blue-400" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">ক্লায়েন্ট নির্বাচন করুন</h2>
+              <p className="text-gray-500 max-w-sm">বাম দিকের তালিকা থেকে একটি ক্লায়েন্ট নির্বাচন করুন অথবা নতুন ক্লায়েন্ট যোগ করুন।</p>
             </div>
           )}
         </div>
@@ -284,10 +353,12 @@ export default function Clients({ onNavigate }: { onNavigate?: (tab: string) => 
             <label className="block text-sm font-medium text-gray-700 mb-1">ফেসবুক পেজ লিংক (ঐচ্ছিক)</label>
             <input type="url" value={newClient.facebook} onChange={e => setNewClient({...newClient, facebook: e.target.value})} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="https://facebook.com/..." />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">মোট বাজেট</label>
-            <input required type="number" value={newClient.totalBudget} onChange={e => setNewClient({...newClient, totalBudget: Number(e.target.value)})} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" />
-          </div>
+          {canSee('project-financials') && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">মোট বাজেট</label>
+              <input required type="number" value={newClient.totalBudget} onChange={e => setNewClient({...newClient, totalBudget: Number(e.target.value)})} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" />
+            </div>
+          )}
           <button type="submit" className="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition-colors">যোগ করুন</button>
         </form>
       </Modal>
@@ -305,14 +376,23 @@ export default function Clients({ onNavigate }: { onNavigate?: (tab: string) => 
               {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
             </select>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">স্ট্যাটাস</label>
-            <select value={newProject.status} onChange={e => setNewProject({...newProject, status: e.target.value as any})} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
-              <option value="Planning">Planning</option>
-              <option value="Shooting">Shooting</option>
-              <option value="Editing">Editing</option>
-              <option value="Completed">Completed</option>
-            </select>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">স্ট্যাটাস</label>
+              <select value={newProject.status} onChange={e => setNewProject({...newProject, status: e.target.value as any})} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                <option value="Planning">Planning</option>
+                <option value="Shooting">Shooting</option>
+                <option value="Editing">Editing</option>
+                <option value="Completed">Completed</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">গুরুত্ব (Priority)</label>
+              <select value={newProject.priority || 'Normal'} onChange={e => setNewProject({...newProject, priority: e.target.value as 'Urgent' | 'Normal'})} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                <option value="Normal">নরমাল (Normal)</option>
+                <option value="Urgent">জরুরী (Urgent)</option>
+              </select>
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">প্রজেক্ট থাম্বনেইল (ঐচ্ছিক)</label>
@@ -328,26 +408,30 @@ export default function Clients({ onNavigate }: { onNavigate?: (tab: string) => 
               </div>
             )}
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">মোট বাজেট</label>
-              <input required type="number" value={newProject.budget} onChange={e => setNewProject({...newProject, budget: Number(e.target.value)})} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">অ্যাডভান্স</label>
-              <input type="number" value={newProject.clientAdvance} onChange={e => setNewProject({...newProject, clientAdvance: Number(e.target.value)})} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" />
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">মডেল পেমেন্ট</label>
-              <input type="number" value={newProject.modelPayment} onChange={e => setNewProject({...newProject, modelPayment: Number(e.target.value)})} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">অতিরিক্ত খরচ</label>
-              <input type="number" value={newProject.extraExpenses} onChange={e => setNewProject({...newProject, extraExpenses: Number(e.target.value)})} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" />
-            </div>
-          </div>
+          {canSee('project-financials') && (
+            <>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">মোট বাজেট</label>
+                  <input required type="number" value={newProject.budget} onChange={e => setNewProject({...newProject, budget: Number(e.target.value)})} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">অ্যাডভান্স</label>
+                  <input type="number" value={newProject.clientAdvance} onChange={e => setNewProject({...newProject, clientAdvance: Number(e.target.value)})} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">মডেল পেমেন্ট</label>
+                  <input type="number" value={newProject.modelPayment} onChange={e => setNewProject({...newProject, modelPayment: Number(e.target.value)})} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">অতিরিক্ত খরচ</label>
+                  <input type="number" value={newProject.extraExpenses} onChange={e => setNewProject({...newProject, extraExpenses: Number(e.target.value)})} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" />
+                </div>
+              </div>
+            </>
+          )}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">মডেল নির্বাচন করুন (একাধিক)</label>
             <select multiple value={newProject.models} onChange={e => setNewProject({...newProject, models: Array.from(e.target.selectedOptions, (option: HTMLOptionElement) => option.value)})} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none h-24">

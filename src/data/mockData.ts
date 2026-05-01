@@ -22,9 +22,19 @@ export type Project = {
   contentLog: string[];
   thumbnailUrl?: string;
   script?: string;
+  scripts?: { id: string; title: string; content: string; }[];
+  messages?: { id: string; senderName: string; content: string; timestamp: string; }[];
+  recommendationLink?: string;
+  videoDuration?: string;
+  formats?: string[];
+  contentType?: string;
+  framework?: string;
+  contentWriterId?: string;
+  editorId?: string;
   link?: string;
   startDate?: string;
   endDate?: string;
+  priority?: 'Urgent' | 'Normal';
 };
 
 export type Model = {
@@ -126,6 +136,14 @@ export const mockClients: Client[] = [
         extraExpenses: 5000,
         models: ['m1', 'm3'],
         contentLog: ['Photoshoot Day 1', 'Video Ad Draft'],
+        script: 'Scene 1\n[A sunny beach, vibrant colors. Models walking on the sand wearing the Summer Collection.]\n\nVoiceover: "This summer, step into the light..."\n\nScene 2\n[Close-up of the shoes, with upbeat background music.]',
+        scripts: [
+          {
+            id: 'sc1',
+            title: 'Summer Collection Ad - 30s',
+            content: 'Scene 1: Sunny beach.\nModels showing off the shoes.\nVoiceover: "Summer is here."'
+          }
+        ]
       },
     ],
   },
@@ -145,6 +163,14 @@ export const mockClients: Client[] = [
         extraExpenses: 2000,
         models: ['m2'],
         contentLog: ['Moodboard created', 'Location scouted'],
+        script: 'Scene 1\n[Traditional living room, festive decoration. Family gathered around.]\n\nVoiceover: "The joy of Eid is incomplete without Aarong..."\n\nScene 2\n[Family exchanging gifts, smiles all around.]',
+        scripts: [
+          {
+            id: 'sc2',
+            title: 'Eid Special - Main TVC',
+            content: 'Family gathering scene.\nVoiceover reading out the Eid offers.\nClose up of the new collection.'
+          }
+        ]
       },
       {
         id: 'p3',
