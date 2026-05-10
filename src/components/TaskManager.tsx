@@ -10,6 +10,8 @@ export interface Task {
   dueDate: string;
   status: 'Pending' | 'Completed';
   createdAt: string;
+  createdByRole?: string;
+  createdByName?: string;
 }
 
 export default function TaskManager() {
@@ -70,7 +72,9 @@ export default function TaskManager() {
       assignedToName: finalAssignedToName,
       dueDate: newTaskDate || new Date().toISOString().split('T')[0],
       status: 'Pending',
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      createdByRole: currentUser?.role,
+      createdByName: currentUser?.name
     };
 
     setTasks([newTask, ...tasks]);
@@ -101,8 +105,20 @@ export default function TaskManager() {
     return false;
   });
 
-  const pendingTasks = visibleTasks.filter(t => t.status === 'Pending');
-  const completedTasks = visibleTasks.filter(t => t.status === 'Completed');
+  const pendingTasks = visibleTasks
+    .filter(t => t.status === 'Pending')
+    .sort((a, b) => {
+      const aIsAdminAssigned = (a.createdByRole === 'admin' || a.createdByRole === 'manager') && a.createdByName !== a.assignedToName;
+      const bIsAdminAssigned = (b.createdByRole === 'admin' || b.createdByRole === 'manager') && b.createdByName !== b.assignedToName;
+      
+      if (aIsAdminAssigned && !bIsAdminAssigned) return -1;
+      if (!aIsAdminAssigned && bIsAdminAssigned) return 1;
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+
+  const completedTasks = visibleTasks
+    .filter(t => t.status === 'Completed')
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   const displayedTasks = activeTab === 'Pending' ? pendingTasks : completedTasks;
 
@@ -216,8 +232,11 @@ export default function TaskManager() {
           </div>
         ) : (
           <ul className="divide-y divide-gray-100">
-            {displayedTasks.map((task) => (
-              <li key={task.id} className="flex items-center justify-between py-4 px-5 hover:bg-gray-50 transition-colors group">
+            {displayedTasks.map((task) => {
+              const isAdminAssigned = task.status === 'Pending' && (task.createdByRole === 'admin' || task.createdByRole === 'manager') && task.createdByName !== task.assignedToName;
+
+              return (
+              <li key={task.id} className={`flex items-center justify-between py-4 px-5 transition-colors group ${isAdminAssigned ? 'bg-amber-50/60 hover:bg-amber-100 border-l-4 border-amber-500' : 'hover:bg-gray-50'}`}>
                 <div className="flex items-center space-x-4 overflow-hidden">
                   <button
                     onClick={() => toggleTaskStatus(task.id)}
@@ -235,7 +254,13 @@ export default function TaskManager() {
                     }`}>
                       {task.title}
                     </span>
-                    <div className="flex items-center text-xs text-gray-500 mt-1 space-x-3">
+                    <div className="flex flex-wrap items-center text-xs text-gray-500 mt-1 gap-x-3 gap-y-1">
+                      {isAdminAssigned && (
+                        <span className="flex items-center text-amber-700 bg-amber-100/80 px-2 py-0.5 rounded font-semibold border border-amber-200">
+                          <UserIcon className="w-3 h-3 mr-1" />
+                          Assigned by {task.createdByName || 'Admin'}
+                        </span>
+                      )}
                       {(task.assignedToName !== 'Unassigned' || task.dueDate) && (
                         <>
                           {task.assignedToName !== 'Unassigned' && (
@@ -263,7 +288,7 @@ export default function TaskManager() {
                   <Trash2 className="w-5 h-5" />
                 </button>
               </li>
-            ))}
+            )})}
           </ul>
         )}
       </div>

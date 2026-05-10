@@ -22,7 +22,7 @@ if($data && isset($data->clientId)) {
     $startDate = isset($data->startDate) ? $data->startDate : '';
     $endDate = isset($data->endDate) ? $data->endDate : '';
     
-    $stmt = $pdo->prepare("INSERT INTO projects (id, client_id, name, status, dueDate, budget, category, thumbnailUrl, script, link, clientAdvance, modelPayment, extraExpenses, contentLog, startDate, endDate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    $stmt = $pdo->prepare("INSERT INTO projects (id, client_id, title, status, dueDate, budget, category, thumbnailUrl, script, link, clientAdvance, modelPayment, extraExpenses, contentLog, startDate, endDate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
     $stmt->execute([$id, $data->clientId, $name, $status, $dueDate, $budget, $category, $thumbnailUrl, $script, $link, $clientAdvance, $modelPayment, $extraExpenses, $contentLog, $startDate, $endDate]);
     
     if (isset($data->models) && is_array($data->models)) {

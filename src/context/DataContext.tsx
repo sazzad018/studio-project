@@ -28,47 +28,47 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const saved = localStorage.getItem('studio_clients');
     if (saved) {
       const parsed = JSON.parse(saved);
-      return Array.isArray(parsed) ? parsed : mockClients;
+      if (Array.isArray(parsed)) return parsed;
     }
-    return mockClients;
+    return USE_MOCK_FALLBACK ? mockClients : [];
   });
   const [models, setModels] = useState<Model[]>(() => {
     const saved = localStorage.getItem('studio_models');
     if (saved) {
       const parsed = JSON.parse(saved);
-      return Array.isArray(parsed) ? parsed : mockModels;
+      if (Array.isArray(parsed)) return parsed;
     }
-    return mockModels;
+    return USE_MOCK_FALLBACK ? mockModels : [];
   });
   const [content, setContent] = useState<Content[]>(() => {
     const saved = localStorage.getItem('studio_content');
     if (saved) {
       const parsed = JSON.parse(saved);
-      return Array.isArray(parsed) ? parsed : mockContent;
+      if (Array.isArray(parsed)) return parsed;
     }
-    return mockContent;
+    return USE_MOCK_FALLBACK ? mockContent : [];
   });
   const [schedule, setSchedule] = useState<ScheduleEvent[]>(() => {
     const saved = localStorage.getItem('studio_schedule');
     if (saved) {
       const parsed = JSON.parse(saved);
-      return Array.isArray(parsed) ? parsed : mockSchedule;
+      if (Array.isArray(parsed)) return parsed;
     }
-    return mockSchedule;
+    return USE_MOCK_FALLBACK ? mockSchedule : [];
   });
   const [categories, setCategories] = useState<string[]>(() => {
     const saved = localStorage.getItem('studio_categories');
     if (saved) {
       const parsed = JSON.parse(saved);
-      return Array.isArray(parsed) ? parsed : mockCategories;
+      if (Array.isArray(parsed)) return parsed;
     }
-    return mockCategories;
+    return USE_MOCK_FALLBACK ? mockCategories : [];
   });
   const [invoices, setInvoices] = useState<Invoice[]>(() => {
     const saved = localStorage.getItem('studio_invoices');
     if (saved) {
       const parsed = JSON.parse(saved);
-      return Array.isArray(parsed) ? parsed : [];
+      if (Array.isArray(parsed)) return parsed;
     }
     return [];
   });

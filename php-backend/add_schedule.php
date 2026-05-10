@@ -14,8 +14,8 @@ if($data) {
     $projectId = isset($data->projectId) ? $data->projectId : '';
     $status = isset($data->status) ? $data->status : 'Pending';
     
-    $stmt = $pdo->prepare("INSERT INTO schedule (id, title, date, type, participants, status, models, crew, projectId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-    $stmt->execute([$id, $data->title, $data->date, $data->type, $participants, $status, $models, $crew, $projectId]);
+    $stmt = $pdo->prepare("INSERT INTO schedule (id, title, date, type, status, models, crew, projectId) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+    $stmt->execute([$id, $data->title, $data->date, $data->type, $status, $models, $crew, $projectId]);
     
     $data->id = $id;
     echo json_encode($data);

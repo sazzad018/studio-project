@@ -1,13 +1,26 @@
 import React, { useState } from 'react';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
-import { Briefcase, DollarSign, FileText, Users, Plus, Phone, Mail, Facebook, Link as LinkIcon, Copy } from 'lucide-react';
+import { Briefcase, DollarSign, FileText, Users, Plus, Phone, Mail, Facebook, Link as LinkIcon, Copy, Trash2 } from 'lucide-react';
 import Modal from './Modal';
+
+const VIDEO_FORMATS = ['1:1', '4:5', '9:16', '16:9'];
+const CONTENT_TYPES = ['Product Education Content', 'Retargeting Content', 'Offer/Promotion Content', 'Awareness Content', 'Sales Content'];
+const FRAMEWORKS_MAP: Record<string, string[]> = {
+  'Product Education Content': ['How-To / Step-by-Step', 'Feature Deep Dive', 'FAQ / Q&A', 'Use Case Demo', 'Problem-Solving Showcase'],
+  'Retargeting Content': ['Objection Handling', 'Urgency/Scarcity', 'Social Proof/Testimonial', 'Reminder/Abandoned Cart'],
+  'Offer/Promotion Content': ['Discount Highlight', 'Bundle Offer', 'Limited Time Event', 'Flash Sale'],
+  'Awareness Content': ['Brand Story', 'Behind the Scenes', 'Mission/Values', 'Entertaining/Viral', 'Educational/Value First'],
+  'Sales Content': ['AIDA Model', 'PAS (Problem-Agitate-Solve)', 'FAB (Features-Advantages-Benefits)', 'BAB (Before-After-Bridge)', 'Hook-Story-Offer', 'PASTOR Model', 'The 4 Cs'],
+};
 
 export default function Clients({ onNavigate }: { onNavigate?: (tab: string) => void }) {
   const { clients, models, categories, addClient, addProject } = useData();
-  const { currentUser } = useAuth();
+  const { currentUser, users } = useAuth();
   const [selectedClient, setSelectedClient] = useState(clients[0] || null);
+  
+  const eligibleWriters = users;
+  const eligibleEditors = users;
   
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
 
@@ -36,9 +49,19 @@ export default function Clients({ onNavigate }: { onNavigate?: (tab: string) => 
     models: [] as string[], 
     contentLog: [] as string[],
     thumbnailUrl: '',
+    script: '',
+    scripts: [] as { id: string; title: string; content: string; }[],
+    recommendationLink: '',
+    videoDuration: '',
+    formats: [] as string[],
+    contentType: '',
+    framework: '',
+    contentWriterId: '',
+    editorId: '',
+    link: '',
     startDate: '',
     endDate: '',
-    priority: 'Normal' as 'Normal' | 'Urgent'
+    priority: 'Normal' as 'Urgent' | 'Normal'
   });
 
   const handleAddClient = (e: React.FormEvent) => {
@@ -53,7 +76,7 @@ export default function Clients({ onNavigate }: { onNavigate?: (tab: string) => 
     if (selectedClient) {
       addProject(selectedClient.id, newProject);
       setIsProjectModalOpen(false);
-      setNewProject({ title: '', category: categories[0] || '', status: 'Planning', budget: 0, clientAdvance: 0, modelPayment: 0, extraExpenses: 0, models: [], contentLog: [], thumbnailUrl: '', startDate: '', endDate: '', priority: 'Normal' });
+      setNewProject({ title: '', category: categories[0] || '', status: 'Planning', budget: 0, clientAdvance: 0, modelPayment: 0, extraExpenses: 0, models: [], contentLog: [], thumbnailUrl: '', script: '', scripts: [], recommendationLink: '', videoDuration: '', formats: [], contentType: '', framework: '', contentWriterId: '', editorId: '', link: '', startDate: '', endDate: '', priority: 'Normal' });
     }
   };
 
@@ -432,27 +455,166 @@ export default function Clients({ onNavigate }: { onNavigate?: (tab: string) => 
               </div>
             </>
           )}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">মডেল নির্বাচন করুন (একাধিক)</label>
-            <select multiple value={newProject.models} onChange={e => setNewProject({...newProject, models: Array.from(e.target.selectedOptions, (option: HTMLOptionElement) => option.value)})} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none h-24">
-              {models.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
-            </select>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
+          {canSee('project-team') && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">প্রজেক্ট শুরু (ঐচ্ছিক)</label>
-              <input type="date" value={newProject.startDate || ''} onChange={e => setNewProject({...newProject, startDate: e.target.value})} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" />
+              <label className="block text-sm font-medium text-gray-700 mb-1">মডেল নির্বাচন করুন (একাধিক)</label>
+              <select multiple value={newProject.models} onChange={e => setNewProject({...newProject, models: Array.from(e.target.selectedOptions, (option: HTMLOptionElement) => option.value)})} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none h-24">
+                {models.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+              </select>
             </div>
+          )}
+          {canSee('project-content') && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">প্রজেক্ট শেষ (ঐচ্ছিক)</label>
-              <input type="date" value={newProject.endDate || ''} onChange={e => setNewProject({...newProject, endDate: e.target.value})} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" />
+              <label className="block text-sm font-medium text-gray-700 mb-1">কনটেন্ট লগ (কমা দিয়ে আলাদা করুন)</label>
+              <input type="text" value={newProject.contentLog.join(', ')} onChange={e => setNewProject({...newProject, contentLog: e.target.value.split(',').map(s => s.trim()).filter(Boolean)})} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="যেমন: Photoshoot Day 1, Video Ad Draft" />
             </div>
+          )}
+
+          {canSee('project-scripts') && (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">ভিডিও ফরম্যাট</label>
+                <div className="flex flex-wrap gap-2">
+                  {VIDEO_FORMATS.map(fmt => (
+                    <label key={fmt} className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 text-sm">
+                      <input 
+                        type="checkbox" 
+                        checked={(newProject.formats || []).includes(fmt)}
+                        onChange={e => {
+                          const currentFormats = newProject.formats || [];
+                          const newFormats = e.target.checked 
+                            ? [...currentFormats, fmt] 
+                            : currentFormats.filter((f: string) => f !== fmt);
+                          setNewProject({...newProject, formats: newFormats});
+                        }}
+                        className="text-blue-600 rounded"
+                      />
+                      {fmt}
+                    </label>
+                  ))}
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">কনটেন্ট টাইপ</label>
+                  <select 
+                    value={newProject.contentType || ''} 
+                    onChange={e => setNewProject({...newProject, contentType: e.target.value, framework: ''})}
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+                  >
+                    <option value="">নির্বাচন করুন</option>
+                    {CONTENT_TYPES.map(type => <option key={type} value={type}>{type}</option>)}
+                  </select>
+                </div>
+                {newProject.contentType && FRAMEWORKS_MAP[newProject.contentType] && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">ফ্রেমওয়ার্ক</label>
+                    <select 
+                      value={newProject.framework || ''} 
+                      onChange={e => setNewProject({...newProject, framework: e.target.value})}
+                      className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+                    >
+                      <option value="">নির্বাচন করুন</option>
+                      {FRAMEWORKS_MAP[newProject.contentType].map(fw => <option key={fw} value={fw}>{fw}</option>)}
+                    </select>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+
+          {canSee('project-team') && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">কনটেন্ট রাইটার (ঐচ্ছিক)</label>
+                <select 
+                  value={newProject.contentWriterId || ''} 
+                  onChange={e => setNewProject({...newProject, contentWriterId: e.target.value})}
+                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+                >
+                  <option value="">নির্বাচন করুন</option>
+                  {eligibleWriters.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">ভিডিও এডিটর (ঐচ্ছিক)</label>
+                <select 
+                  value={newProject.editorId || ''} 
+                  onChange={e => setNewProject({...newProject, editorId: e.target.value})}
+                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+                >
+                  <option value="">নির্বাচন করুন</option>
+                  {eligibleEditors.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                </select>
+              </div>
+            </div>
+          )}
+
+          {canSee('project-scripts') && (
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <label className="block text-sm font-medium text-gray-700">ভিডিও স্ক্রিপ্ট (ঐচ্ছিক)</label>
+                <button type="button" onClick={() => setNewProject({...newProject, scripts: [...newProject.scripts, { id: Date.now().toString(), title: '', content: '' }]})} className="text-sm bg-blue-50 text-blue-600 px-2 py-1 rounded hover:bg-blue-100 flex items-center">
+                  <Plus size={14} className="mr-1" /> যোগ করুন
+                </button>
+              </div>
+              {newProject.scripts.map((script, index) => (
+                <div key={script.id} className="mb-3 border border-gray-200 rounded-lg p-3 relative">
+                  <button type="button" onClick={() => {
+                    const newScripts = [...newProject.scripts];
+                    newScripts.splice(index, 1);
+                    setNewProject({...newProject, scripts: newScripts});
+                  }} className="absolute top-2 right-2 text-red-500 hover:text-red-700">
+                    <Trash2 size={16} />
+                  </button>
+                  <input type="text" value={script.title} onChange={e => {
+                    const newScripts = [...newProject.scripts];
+                    newScripts[index].title = e.target.value;
+                    setNewProject({...newProject, scripts: newScripts});
+                  }} placeholder="স্ক্রিপ্ট টাইটেল..." className="w-full mb-2 p-2 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 outline-none pr-8" />
+                  <textarea value={script.content} onChange={e => {
+                    const newScripts = [...newProject.scripts];
+                    newScripts[index].content = e.target.value;
+                    setNewProject({...newProject, scripts: newScripts});
+                  }} className="w-full p-2 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 outline-none h-20" placeholder="স্ক্রিপ্ট কনটেন্ট..." />
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="grid grid-cols-2 gap-4 mt-4">
+            {canSee('project-scripts') && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">ভিডিও ডিউরেশন (ঐচ্ছিক)</label>
+                <input type="text" value={newProject.videoDuration || ''} onChange={e => setNewProject({...newProject, videoDuration: e.target.value})} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="যেমন: ৩ মিনিট" />
+              </div>
+            )}
+            {canSee('project-links') && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">রেকোমেন্ডেশন লিংক (ঐচ্ছিক)</label>
+                <input type="url" value={newProject.recommendationLink || ''} onChange={e => setNewProject({...newProject, recommendationLink: e.target.value})} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="https://..." />
+              </div>
+            )}
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">কনটেন্ট লগ (কমা দিয়ে আলাদা করুন)</label>
-            <input type="text" value={newProject.contentLog.join(', ')} onChange={e => setNewProject({...newProject, contentLog: e.target.value.split(',').map(s => s.trim()).filter(Boolean)})} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="যেমন: Photoshoot Day 1, Video Ad Draft" />
-          </div>
-          <button type="submit" className="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition-colors">যোগ করুন</button>
+          {canSee('project-dates') && (
+            <div className="grid grid-cols-2 gap-4 mt-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">প্রজেক্ট শুরু (ঐচ্ছিক)</label>
+                <input type="date" value={newProject.startDate || ''} onChange={e => setNewProject({...newProject, startDate: e.target.value})} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">প্রজেক্ট শেষ (ঐচ্ছিক)</label>
+                <input type="date" value={newProject.endDate || ''} onChange={e => setNewProject({...newProject, endDate: e.target.value})} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+              </div>
+            </div>
+          )}
+          {canSee('project-links') && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">প্রজেক্ট লিঙ্ক (ঐচ্ছিক)</label>
+              <input type="url" value={newProject.link || ''} onChange={e => setNewProject({...newProject, link: e.target.value})} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="https://..." />
+            </div>
+          )}
+          <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors">যোগ করুন</button>
         </form>
       </Modal>
     </div>

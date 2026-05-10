@@ -74,4 +74,11 @@ export const api = {
     
   saveDailyTask: (date_key: string, step_id: string, completed: boolean, notes: string) => 
     fetchApi<{success: boolean}>('/save_daily_task.php', { method: 'POST', body: JSON.stringify({ date_key, step_id, completed, notes }) }),
+    
+  // Generic KV Store Methods
+  saveToStore: (key: string, data: any) => 
+    fetchApi<{success: boolean}>(`/store.php?key=${key}`, { method: 'POST', body: JSON.stringify(data) }),
+    
+  getFromStore: (key: string) => 
+    fetchApi<any>('/sync.php').then(res => res[key] || null),
 };

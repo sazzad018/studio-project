@@ -159,6 +159,45 @@ try {
             )");
         }
     } catch (\Exception $e) {}
+
+    // Auto-migrate service_clients tables if missing
+    try {
+        $stmt = $pdo->query("SHOW TABLES LIKE 'service_clients'");
+        if ($stmt->rowCount() == 0) {
+            $pdo->exec("CREATE TABLE service_clients (
+                id VARCHAR(50) PRIMARY KEY,
+                businessName VARCHAR(255) NOT NULL,
+                websiteUrl VARCHAR(255),
+                whatsappNumber VARCHAR(50),
+                email VARCHAR(100),
+                serviceType VARCHAR(50) NOT NULL,
+                status VARCHAR(50) DEFAULT 'Active',
+                facebookPageLink VARCHAR(255),
+                adAccountId VARCHAR(100),
+                createdAt VARCHAR(50),
+                isPinned BOOLEAN DEFAULT 0,
+                details JSON
+            )");
+            $pdo->exec("CREATE TABLE service_comments (
+                id VARCHAR(50) PRIMARY KEY,
+                clientId VARCHAR(50) NOT NULL,
+                text TEXT NOT NULL,
+                authorId VARCHAR(50),
+                authorName VARCHAR(100),
+                createdAt VARCHAR(50),
+                FOREIGN KEY (clientId) REFERENCES service_clients(id) ON DELETE CASCADE
+            )");
+            $pdo->exec("CREATE TABLE service_reminders (
+                id VARCHAR(50) PRIMARY KEY,
+                clientId VARCHAR(50) NOT NULL,
+                text TEXT NOT NULL,
+                assignedToId VARCHAR(50),
+                dueDate VARCHAR(50),
+                isFbAdEndReminder BOOLEAN DEFAULT 0,
+                FOREIGN KEY (clientId) REFERENCES service_clients(id) ON DELETE CASCADE
+            )");
+        }
+    } catch (\Exception $e) {}
     
 } catch (\PDOException $e) {
     http_response_code(500);

@@ -29,6 +29,7 @@ export default function ProjectList({ onNavigate }: { onNavigate?: (tab: string)
   const [editingProject, setEditingProject] = useState<any>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [activeTab, setActiveTab] = useState<string>('All');
 
   const [newProject, setNewProject] = useState({ 
     clientId: clients[0]?.id || '', 
@@ -68,6 +69,9 @@ export default function ProjectList({ onNavigate }: { onNavigate?: (tab: string)
         return false;
       }
     }
+
+    // Filter by Tab (Status)
+    if (activeTab !== 'All' && project.status !== activeTab) return false;
 
     if (selectedCategory === 'All') return true;
     return project.category === selectedCategory;
@@ -170,8 +174,42 @@ export default function ProjectList({ onNavigate }: { onNavigate?: (tab: string)
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight">প্রজেক্ট লিস্ট</h1>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
+        <div>
+          <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight">কনটেন্ট প্রজেক্ট লিস্ট</h1>
+          <div className="flex flex-wrap bg-gray-100 p-1 rounded-lg mt-3 w-max gap-1">
+            <button
+              onClick={() => setActiveTab('All')}
+              className={`px-4 py-1.5 text-sm font-bold rounded-md transition-all ${activeTab === 'All' ? 'bg-white shadow-sm text-indigo-700' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+              সকল প্রজেক্ট
+            </button>
+            <button
+              onClick={() => setActiveTab('Planning')}
+              className={`px-4 py-1.5 text-sm font-bold rounded-md transition-all ${activeTab === 'Planning' ? 'bg-white shadow-sm text-amber-600' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+              Planning
+            </button>
+            <button
+              onClick={() => setActiveTab('Shooting')}
+              className={`px-4 py-1.5 text-sm font-bold rounded-md transition-all ${activeTab === 'Shooting' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+              Shooting
+            </button>
+            <button
+              onClick={() => setActiveTab('Editing')}
+              className={`px-4 py-1.5 text-sm font-bold rounded-md transition-all ${activeTab === 'Editing' ? 'bg-white shadow-sm text-purple-600' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+              Editing
+            </button>
+            <button
+              onClick={() => setActiveTab('Completed')}
+              className={`px-4 py-1.5 text-sm font-bold rounded-md transition-all ${activeTab === 'Completed' ? 'bg-white shadow-sm text-green-700' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+              Completed
+            </button>
+          </div>
+        </div>
         <div className="flex items-center space-x-3">
           <button 
             onClick={() => setIsCategoryModalOpen(true)}
@@ -271,6 +309,7 @@ export default function ProjectList({ onNavigate }: { onNavigate?: (tab: string)
                 <span className={`px-3 py-1 text-xs font-bold rounded-full uppercase tracking-wider border ${
                   project.status === 'Completed' ? 'bg-green-100 text-green-800 border-green-200' :
                   project.status === 'Shooting' ? 'bg-blue-100 text-blue-800 border-blue-200' :
+                  project.status === 'Editing' ? 'bg-purple-100 text-purple-800 border-purple-200' :
                   'bg-yellow-100 text-yellow-800 border-yellow-200'
                 }`}>
                   {project.status}
@@ -384,6 +423,7 @@ export default function ProjectList({ onNavigate }: { onNavigate?: (tab: string)
                       <span className={`px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider border ${
                         project.status === 'Completed' ? 'bg-green-100 text-green-800 border-green-200' :
                         project.status === 'Shooting' ? 'bg-blue-100 text-blue-800 border-blue-200' :
+                        project.status === 'Editing' ? 'bg-purple-100 text-purple-800 border-purple-200' :
                         'bg-yellow-100 text-yellow-800 border-yellow-200'
                       }`}>
                         {project.status}

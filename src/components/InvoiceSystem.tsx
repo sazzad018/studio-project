@@ -1,7 +1,9 @@
 import React, { useState, useRef } from 'react';
 import { useData } from '../context/DataContext';
-import { FileText, Plus, Trash2, Printer, Download, Save, CheckCircle } from 'lucide-react';
-import html2pdf from 'html2pdf.js';
+import { FileText, Plus, Trash2, Printer, Download, Save, CheckCircle, Wand2, Loader2 } from 'lucide-react';
+import { enhanceItemDescription } from '../services/ai';
+import { toPng } from 'html-to-image';
+import jsPDF from 'jspdf';
 
 type InvoiceItem = {
   id: string;
@@ -23,7 +25,16 @@ export default function InvoiceSystem() {
   ]);
   
   const [taxRate, setTaxRate] = useState<number>(0);
+  const [taxType, setTaxType] = useState<'percentage' | 'fixed'>('percentage');
   const [discount, setDiscount] = useState<number>(0);
+  const [discountType, setDiscountType] = useState<'percentage' | 'fixed'>('fixed');
+  const [currency, setCurrency] = useState<'BDT' | 'USD'>('BDT');
+  const [themeColor, setThemeColor] = useState<string>('#4f46e5');
+  const [agencyName, setAgencyName] = useState<string>('স্টুডিও প্রো');
+  const [agencyAddress, setAgencyAddress] = useState<string>('১২৩ স্টুডিও রোড, ঢাকা');
+  const [agencyEmail, setAgencyEmail] = useState<string>('contact@studiopro.com');
+  const [agencyPhone, setAgencyPhone] = useState<string>('+880 1234 567890');
+  const [terms, setTerms] = useState<string>('');
   const [logoUrl, setLogoUrl] = useState<string>(() => localStorage.getItem('invoiceLogo') || '');
   const [notes, setNotes] = useState<string>('পেমেন্ট ক্লিয়ার করতে হবে। ভিডিও হ্যান্ডওভার করার পর ওই ভিডিওতে অন্য কোন কারেকশন করা যাবে না।');
   const [isSaving, setIsSaving] = useState(false);
@@ -32,6 +43,53 @@ export default function InvoiceSystem() {
   
   const [message, setMessage] = useState<{text: string, type: 'error' | 'success'} | null>(null);
   const [invoiceToDelete, setInvoiceToDelete] = useState<string | null>(null);
+  const [focusedItemId, setFocusedItemId] = useState<string | null>(null);
+  const [enhancingItemId, setEnhancingItemId] = useState<string | null>(null);
+
+  const SUGGESTIONS = [
+    "Facebook Marketing Services - Ad Campaign Management, Audience Targeting & Optimization",
+    "Website Development - Complete Setup including Domain, Hosting, Meta Pixel & Server-Side Tracking",
+    "Video Marketing & Editing - Promotional Video Creation, Optimization & Advertising",
+    "Search Engine Optimization (SEO) - On-Page, Off-Page, Technical SEO & Content Strategy",
+    "Social Media Management - Content Creation, Posting & Community Engagement",
+    "Online Course Enrollment - Premium Access to Course Materials & Direct Support",
+    "Digital Product - Premium PDF E-Book / Educational Guide",
+    "Digital Assets Sales - Software License, Tools & Configurations",
+    "Graphic Design - Logo Design, Brand Identity & Social Media Banners"
+  ];
+
+  const PREDEFINED_AGENCIES = {
+    social_ads_expert: {
+      name: 'Social ads expert',
+      address: 'Dhaka, Bangladesh\ninfo@socialadsexpert.com',
+      email: 'info@socialadsexpert.com',
+      phone: '01798205143',
+      color: '#2563eb'
+    },
+    social_ads_studio: {
+      name: 'social ads studio',
+      address: 'Dhaka, Bangladesh\nstudio@socialadsstudio.com',
+      email: 'studio@socialadsstudio.com',
+      phone: '01928061999',
+      color: '#9333ea'
+    },
+    bikri_ai_expert: {
+      name: 'bikri Ai. expert',
+      address: 'Dhaka, Bangladesh\nai@bikriaiexpert.com',
+      email: 'ai@bikriaiexpert.com',
+      phone: '01960285161',
+      color: '#059669'
+    }
+  };
+
+  const handleAgencySelect = (key: keyof typeof PREDEFINED_AGENCIES) => {
+    const agency = PREDEFINED_AGENCIES[key];
+    setAgencyName(agency.name);
+    setAgencyAddress(agency.address);
+    setAgencyEmail(agency.email);
+    setAgencyPhone(agency.phone);
+    setThemeColor(agency.color);
+  };
 
   const selectedClient = clients.find(c => c.id === selectedClientId);
   const selectedProject = selectedClient?.projects.find(p => p.id === selectedProjectId);
@@ -57,6 +115,19 @@ export default function InvoiceSystem() {
     setItems(items.filter(item => item.id !== id));
   };
 
+  const handleEnhanceDescription = async (id: string, currentDescription: string) => {
+    if (!currentDescription.trim()) return;
+    setEnhancingItemId(id);
+    try {
+      const enhanced = await enhanceItemDescription(currentDescription);
+      handleItemChange(id, 'description', enhanced);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setEnhancingItemId(null);
+    }
+  };
+
   const handleItemChange = (id: string, field: keyof InvoiceItem, value: string | number) => {
     setItems(items.map(item => 
       item.id === id ? { ...item, [field]: value } : item
@@ -64,8 +135,11 @@ export default function InvoiceSystem() {
   };
 
   const subtotal = items.reduce((sum, item) => sum + (item.quantity * item.rate), 0);
-  const taxAmount = subtotal * (taxRate / 100);
-  const total = subtotal + taxAmount - discount;
+  const discountAmount = discountType === 'percentage' ? (subtotal * discount) / 100 : discount;
+  const afterDiscount = subtotal - discountAmount;
+  const taxAmount = taxType === 'percentage' ? (afterDiscount * taxRate) / 100 : taxRate;
+  const total = afterDiscount + taxAmount;
+  const symbol = currency === 'BDT' ? '৳' : '$';
 
   const handlePrint = () => {
     window.print();
@@ -97,11 +171,10 @@ export default function InvoiceSystem() {
 
   const handleDownloadPDF = (inv: any) => {
     setIsDownloading(true);
-    setMessage({ text: 'পিডিএফ তৈরি হচ্ছে... (ডাউনলোড না হলে অ্যাপটি নতুন ট্যাবে ওপেন করুন)', type: 'success' });
+    setMessage({ text: 'পিডিএফ তৈরি হচ্ছে... দয়া করে অপেক্ষা করুন।', type: 'success' });
     
     handleViewInvoice(inv);
     
-    // Wait for the DOM to update with the new invoice data
     setTimeout(() => {
       const element = document.getElementById('invoice-preview');
       if (!element) {
@@ -111,63 +184,62 @@ export default function InvoiceSystem() {
         return;
       }
       
-      const opt: any = {
-        margin:       10,
-        filename:     `Invoice_${inv.invoiceNumber}.pdf`,
-        image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { 
-          scale: 2, 
-          useCORS: true, 
-          logging: false,
-          onclone: (clonedDoc: Document) => {
-            const textareas = clonedDoc.querySelectorAll('textarea');
-            textareas.forEach(ta => {
-              const div = clonedDoc.createElement('div');
-              div.className = ta.className;
-              div.style.cssText = ta.style.cssText;
-              div.style.whiteSpace = 'pre-wrap';
-              div.style.wordBreak = 'break-word';
-              div.textContent = ta.value;
-              ta.parentNode?.replaceChild(div, ta);
-            });
-            const inputs = clonedDoc.querySelectorAll('input');
-            inputs.forEach(input => {
-              if (input.type === 'text' || input.type === 'number') {
-                const div = clonedDoc.createElement('div');
-                div.className = input.className;
-                div.style.cssText = input.style.cssText;
-                div.textContent = input.value;
-                input.parentNode?.replaceChild(div, input);
-              }
-            });
-          }
-        },
-        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-      };
+      // Apply temporary div replacements for inputs and textareas to ensure they render in html-to-image
+      const inputs = element.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('input, textarea');
+      const replacements: {el: HTMLInputElement | HTMLTextAreaElement, div: HTMLDivElement}[] = [];
       
-      try {
-        // @ts-ignore
-        const generatePDF = typeof html2pdf === 'function' ? html2pdf : html2pdf.default || window.html2pdf;
-        
-        if (!generatePDF) {
-          throw new Error("html2pdf library not found");
+      inputs.forEach(el => {
+        const div = document.createElement('div');
+        div.className = el.className;
+        div.style.cssText = el.style.cssText;
+        if (el.tagName.toLowerCase() === 'textarea') {
+          div.style.whiteSpace = 'pre-wrap';
+          div.style.wordBreak = 'break-word';
         }
-        
-        generatePDF().set(opt).from(element).save().then(() => {
+        div.textContent = el.value;
+        el.parentNode?.insertBefore(div, el);
+        el.style.display = 'none';
+        replacements.push({ el, div });
+      });
+      
+      toPng(element, { quality: 0.95, pixelRatio: 2 })
+        .then((dataUrl) => {
+          // Restore inputs/textareas
+          replacements.forEach(({ el, div }) => {
+            div.remove();
+            el.style.display = '';
+          });
+
+          const pdf = new jsPDF({
+            orientation: 'portrait',
+            unit: 'mm',
+            format: 'a4'
+          });
+          
+          const imgProps = pdf.getImageProperties(dataUrl);
+          const pdfWidth = pdf.internal.pageSize.getWidth();
+          const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+          
+          pdf.addImage(dataUrl, 'PNG', 0, 0, pdfWidth, pdfHeight);
+          pdf.save(`Invoice_${inv.invoiceNumber}.pdf`);
+          
           setIsDownloading(false);
+          setMessage({ text: 'পিডিএফ ডাউনলোড সফল হয়েছে!', type: 'success' });
           setTimeout(() => setMessage(null), 4000);
-        }).catch((err: any) => {
-          throw err;
+        })
+        .catch((err) => {
+          // Restore inputs/textareas
+          replacements.forEach(({ el, div }) => {
+            div.remove();
+            el.style.display = '';
+          });
+
+          console.error('oops, something went wrong!', err);
+          setIsDownloading(false);
+          setMessage({ text: 'পিডিএফ ডাউনলোড ব্যর্থ হয়েছে।', type: 'error' });
+          setTimeout(() => setMessage(null), 4000);
         });
-      } catch (error) {
-        console.error("PDF generation error:", error);
-        setIsDownloading(false);
-        setMessage({ text: 'ডাউনলোড ব্লক করা হয়েছে। দয়া করে অ্যাপটি নতুন ট্যাবে ওপেন করে আবার চেষ্টা করুন।', type: 'error' });
-        setTimeout(() => {
-          setMessage(null);
-        }, 5000);
-      }
-    }, 1500);
+    }, 1000);
   };
 
   const handleDeleteInvoice = async (id: string) => {
@@ -457,23 +529,89 @@ export default function InvoiceSystem() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">ভ্যাট/ট্যাক্স (%)</label>
-                <input 
-                  type="number" 
-                  value={taxRate}
-                  onChange={(e) => setTaxRate(Number(e.target.value))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
-                />
+                <label className="block text-sm font-medium text-gray-700 mb-1">ভ্যাট/ট্যাক্স টাইপ</label>
+                <select value={taxType} onChange={(e) => setTaxType(e.target.value as any)} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+                  <option value="percentage">শতাংশ (%)</option>
+                  <option value="fixed">পরিমাণ (৳)</option>
+                </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">ডিসকাউন্ট (৳)</label>
-                <input 
-                  type="number" 
-                  value={discount}
-                  onChange={(e) => setDiscount(Number(e.target.value))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
-                />
+                <label className="block text-sm font-medium text-gray-700 mb-1">ভ্যাট/ট্যাক্স ({taxType === 'percentage' ? '%' : '৳'})</label>
+                <input type="number" value={taxRate || ''} onChange={(e) => setTaxRate(Number(e.target.value))} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500" />
               </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">ডিসকাউন্ট টাইপ</label>
+                <select value={discountType} onChange={(e) => setDiscountType(e.target.value as any)} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+                  <option value="percentage">শতাংশ (%)</option>
+                  <option value="fixed">পরিমাণ (৳)</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">ডিসকাউন্ট ({discountType === 'percentage' ? '%' : '৳'})</label>
+                <input type="number" value={discount || ''} onChange={(e) => setDiscount(Number(e.target.value))} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500" />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">কারেন্সি</label>
+                <select value={currency} onChange={(e) => setCurrency(e.target.value as any)} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+                  <option value="BDT">BDT (৳)</option>
+                  <option value="USD">USD ($)</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">থিম কালার</label>
+                <input type="color" value={themeColor} onChange={(e) => setThemeColor(e.target.value)} className="w-full h-10 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 p-1" />
+              </div>
+            </div>
+            
+            <div className="pt-4 border-t border-gray-100">
+              <label className="block text-sm font-medium text-gray-700 mb-2">কোম্পানি নির্বাচন করুন (অটো-ফিল)</label>
+              <div className="grid grid-cols-3 gap-2">
+                <button 
+                  onClick={() => handleAgencySelect('social_ads_expert')}
+                  className="px-2 py-1.5 text-xs bg-blue-50 text-blue-700 border border-blue-200 rounded-md hover:bg-blue-100 transition-colors font-semibold"
+                >
+                  Social ads expert
+                </button>
+                <button 
+                  onClick={() => handleAgencySelect('social_ads_studio')}
+                  className="px-2 py-1.5 text-xs bg-purple-50 text-purple-700 border border-purple-200 rounded-md hover:bg-purple-100 transition-colors font-semibold"
+                >
+                  social ads studio
+                </button>
+                <button 
+                  onClick={() => handleAgencySelect('bikri_ai_expert')}
+                  className="px-2 py-1.5 text-xs bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-md hover:bg-emerald-100 transition-colors font-semibold"
+                >
+                  bikri Ai. expert
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">কোম্পানির নাম</label>
+              <input type="text" value={agencyName} onChange={(e) => setAgencyName(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500" />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">কোম্পানির ইমেইল</label>
+                <input type="email" value={agencyEmail} onChange={(e) => setAgencyEmail(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">কোম্পানির ফোন</label>
+                <input type="text" value={agencyPhone} onChange={(e) => setAgencyPhone(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500" />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">কোম্পানির ঠিকানা</label>
+              <textarea value={agencyAddress} onChange={(e) => setAgencyAddress(e.target.value)} rows={2} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-sm" />
             </div>
 
             <div>
@@ -485,142 +623,171 @@ export default function InvoiceSystem() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-sm"
               />
               {logoUrl && (
-                <button 
-                  onClick={() => {
-                    setLogoUrl('');
-                    localStorage.removeItem('invoiceLogo');
-                  }}
-                  className="mt-2 text-xs text-red-600 hover:text-red-800"
-                >
+                <button onClick={() => { setLogoUrl(''); localStorage.removeItem('invoiceLogo'); }} className="mt-2 text-xs text-red-600 hover:text-red-800">
                   লোগো মুছুন
                 </button>
               )}
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">কোম্পানির নোট (শর্তাবলী)</label>
-              <textarea 
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-sm"
-                placeholder="ইনভয়েসের নিচে প্রদর্শিত নোট..."
-              />
+              <label className="block text-sm font-medium text-gray-700 mb-1">কোম্পানির নোট</label>
+              <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-sm" placeholder="ইনভয়েসের নিচে প্রদর্শিত নোট..." />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">শর্তাবলী (Terms & Conditions)</label>
+              <textarea value={terms} onChange={(e) => setTerms(e.target.value)} rows={2} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-sm" placeholder="শর্তাবলী..." />
             </div>
           </div>
         </div>
 
         {/* Invoice Preview */}
-        <div className="bg-[#ffffff] rounded-xl shadow-sm border border-[#f3f4f6] p-8 lg:col-span-2 print:col-span-3 print:shadow-none print:border-none print:p-0" id="invoice-preview">
+        <div className="bg-white w-full max-w-[210mm] min-h-[297mm] mx-auto shadow-2xl p-8 sm:p-12 text-gray-800 font-sans lg:col-span-2 print:col-span-3 print:shadow-none print:border-none print:p-0 print:min-h-0 print:w-full" id="invoice-preview">
           
           {/* Header */}
-          <div className="flex justify-between items-start border-b border-[#e5e7eb] pb-6 mb-6">
+          <div className="flex justify-between items-start border-b-2 pb-8 mb-8" style={{ borderColor: `${themeColor}33` }}>
             <div>
-              <h2 className="text-3xl font-bold text-[#111827]">INVOICE</h2>
-              <p className="text-[#6b7280] mt-1">#{invoiceNumber}</p>
-            </div>
-            <div className="text-right">
               {logoUrl ? (
-                <img src={logoUrl} alt="Company Logo" className="h-12 object-contain ml-auto mb-2" />
-              ) : (
-                <h3 className="font-bold text-[#111827] text-xl">স্টুডিও প্রো</h3>
-              )}
-              <p className="text-[#4b5563] text-sm mt-1">১২৩ স্টুডিও রোড, ঢাকা</p>
-              <p className="text-[#4b5563] text-sm">contact@studiopro.com</p>
-              <p className="text-[#4b5563] text-sm">+880 1234 567890</p>
-            </div>
-          </div>
-
-          {/* Client & Dates */}
-          <div className="flex justify-between items-start mb-8">
-            <div>
-              <p className="text-sm text-[#6b7280] font-medium mb-1">প্রাপক:</p>
-              {selectedClient ? (
-                <>
-                  <p className="font-bold text-[#111827]">{selectedClient.name}</p>
-                  <p className="text-[#4b5563]">{selectedClient.company}</p>
-                  {selectedClient.email && <p className="text-[#4b5563] text-sm">{selectedClient.email}</p>}
-                  {selectedClient.phone && <p className="text-[#4b5563] text-sm">{selectedClient.phone}</p>}
-                </>
-              ) : (
-                <p className="text-[#9ca3af] italic">ক্লায়েন্ট নির্বাচন করুন</p>
-              )}
+                <img src={logoUrl} alt="Agency Logo" className="h-16 object-contain mb-4" />
+              ) : null}
+              <h1 className="text-4xl font-bold tracking-tight mb-2" style={{ color: themeColor }}>{agencyName}</h1>
+              <p className="text-sm text-gray-500 whitespace-pre-line">{agencyAddress}</p>
+              <p className="text-sm text-gray-500">{agencyEmail}</p>
+              <p className="text-sm text-gray-500">{agencyPhone}</p>
             </div>
             <div className="text-right">
-              <div className="mb-2">
-                <p className="text-sm text-[#6b7280] font-medium inline-block mr-2">তারিখ:</p>
-                <p className="font-medium text-[#111827] inline-block">{invoiceDate ? new Date(invoiceDate).toLocaleDateString('bn-BD') : '-'}</p>
-              </div>
-              <div>
-                <p className="text-sm text-[#6b7280] font-medium inline-block mr-2">মেয়াদ:</p>
-                <p className="font-medium text-[#111827] inline-block">{dueDate ? new Date(dueDate).toLocaleDateString('bn-BD') : '-'}</p>
+              <h2 className="text-3xl font-light text-gray-400 uppercase tracking-widest mb-4">Invoice</h2>
+              <div className="grid grid-cols-2 gap-4 text-sm text-right">
+                <div className="text-gray-500 font-medium whitespace-nowrap">Invoice No:</div>
+                <div className="font-mono text-gray-900 whitespace-nowrap">{invoiceNumber || 'INV-001'}</div>
+                
+                <div className="text-gray-500 font-medium whitespace-nowrap">Date:</div>
+                <div className="text-gray-900 whitespace-nowrap">{invoiceDate ? new Date(invoiceDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' }) : ''}</div>
+                
+                <div className="text-gray-500 font-medium whitespace-nowrap">Due Date:</div>
+                <div className="text-gray-900 font-semibold whitespace-nowrap">{dueDate ? new Date(dueDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' }) : ''}</div>
               </div>
             </div>
           </div>
 
-          {/* Project Info */}
-          {selectedProject && (
-            <div className="mb-6 bg-[#f9fafb] p-4 rounded-lg">
-              <p className="text-sm text-[#6b7280] font-medium mb-1">প্রজেক্ট:</p>
-              <p className="font-bold text-[#111827]">{selectedProject.title}</p>
-            </div>
-          )}
+          {/* Bill To */}
+          <div className="mb-10">
+            <h3 className="text-xs font-semibold uppercase tracking-wider mb-3 border-b pb-2 inline-block" style={{ color: themeColor, borderColor: `${themeColor}33` }}>Bill To</h3>
+            <p className="text-lg font-bold text-gray-900">{selectedClient?.name || 'Client Name'}</p>
+            <p className="text-sm text-gray-600 whitespace-pre-line mt-1">{selectedClient?.company || selectedClient?.address || 'Company Address'}</p>
+            {selectedClient?.email && <p className="text-sm text-gray-600">{selectedClient.email}</p>}
+            {selectedClient?.phone && <p className="text-sm text-gray-600">{selectedClient.phone}</p>}
+          </div>
 
-          {/* Items Table */}
-          <div className="mb-8">
+          {/* Line Items Table */}
+          <div className="mb-10 overflow-hidden rounded-lg border border-gray-200">
             <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b-2 border-[#e5e7eb]">
-                  <th className="py-3 text-sm font-semibold text-[#374151]">বিবরণ</th>
-                  <th className="py-3 text-sm font-semibold text-[#374151] text-center w-24">পরিমাণ</th>
-                  <th className="py-3 text-sm font-semibold text-[#374151] text-right w-32">রেট (৳)</th>
-                  <th className="py-3 text-sm font-semibold text-[#374151] text-right w-32">মোট (৳)</th>
-                  <th className="py-3 w-10 print:hidden"></th>
+              <thead style={{ backgroundColor: `${themeColor}11` }}>
+                <tr>
+                  <th className="py-3 px-4 text-xs font-semibold uppercase tracking-wider" style={{ color: themeColor }}>Description</th>
+                  <th className="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-right w-24" style={{ color: themeColor }}>Qty</th>
+                  <th className="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-right w-32" style={{ color: themeColor }}>Rate</th>
+                  <th className="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-right w-32" style={{ color: themeColor }}>Amount</th>
+                  <th className="py-3 w-10 print:hidden" style={{ color: themeColor }}></th>
                 </tr>
               </thead>
-              <tbody>
-                {items.map((item, index) => (
-                  <tr key={item.id} className="border-b border-[#f3f4f6] align-top">
-                    <td className="py-3 pr-4">
-                      <textarea 
-                        value={item.description}
-                        onChange={(e) => {
-                          e.target.style.height = 'auto';
-                          e.target.style.height = e.target.scrollHeight + 'px';
-                          handleItemChange(item.id, 'description', e.target.value);
-                        }}
-                        onFocus={(e) => {
-                          e.target.style.height = 'auto';
-                          e.target.style.height = e.target.scrollHeight + 'px';
-                        }}
-                        placeholder="কাজের বিবরণ..."
-                        className="w-full bg-transparent border-none focus:ring-0 p-0 text-[#111827] resize-none overflow-hidden"
-                        rows={1}
-                        style={{ minHeight: '24px' }}
-                      />
+              <tbody className="divide-y divide-gray-200">
+                {items.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="py-6 px-4 text-center text-sm text-gray-400 italic">No line items added</td>
+                  </tr>
+                ) : null}
+                {items.map((item, idx) => (
+                  <tr key={item.id} className="hover:bg-gray-50/50 transition-colors align-top">
+                    <td className="py-3 px-4 text-sm text-gray-900 font-medium relative group">
+                      <div className="relative">
+                        <textarea 
+                          value={item.description}
+                          onChange={(e) => {
+                            e.target.style.height = 'auto';
+                            e.target.style.height = e.target.scrollHeight + 'px';
+                            handleItemChange(item.id, 'description', e.target.value);
+                          }}
+                          onFocus={(e) => {
+                            e.target.style.height = 'auto';
+                            e.target.style.height = e.target.scrollHeight + 'px';
+                            setFocusedItemId(item.id);
+                          }}
+                          onBlur={() => {
+                            setTimeout(() => {
+                              setFocusedItemId(current => current === item.id ? null : current);
+                            }, 200);
+                          }}
+                          placeholder="কাজের বিবরণ..."
+                          className="w-full bg-transparent border-none focus:ring-1 focus:ring-indigo-200 rounded-md p-1 -ml-1 text-gray-900 resize-none overflow-hidden pr-8"
+                          rows={1}
+                          style={{ minHeight: '24px' }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleEnhanceDescription(item.id, item.description)}
+                          disabled={enhancingItemId === item.id || !item.description.trim()}
+                          className={`absolute right-0 top-1 p-1 rounded transition-colors ${
+                            item.description.trim() ? 'text-indigo-600 hover:bg-indigo-50' : 'text-gray-300'
+                          } print:hidden opacity-0 group-hover:opacity-100 focus:opacity-100 disabled:opacity-50`}
+                          title="Professional rewrite (AI)"
+                        >
+                          {enhancingItemId === item.id ? <Loader2 size={14} className="animate-spin" /> : <Wand2 size={14} />}
+                        </button>
+                      </div>
+                      {focusedItemId === item.id && (
+                        <div className="absolute top-full left-0 min-w-[300px] sm:w-[450px] bg-white border border-gray-200 shadow-xl rounded-md mt-1 z-50 max-h-64 overflow-y-auto print:hidden">
+                          <div className="sticky top-0 p-2 text-xs font-semibold text-gray-500 bg-gray-50 border-b border-gray-100 flex justify-between items-center shadow-sm">
+                            <span>প্রস্তাবিত বিবরণ নির্বাচন করুন</span>
+                            <span className="text-gray-400 font-normal italic">অথবা নিজে লিখুন</span>
+                          </div>
+                          {SUGGESTIONS.filter(s => s.toLowerCase().includes((item.description || '').toLowerCase())).length > 0 ? (
+                            SUGGESTIONS.filter(s => s.toLowerCase().includes((item.description || '').toLowerCase())).map((suggestion, idx) => (
+                              <button
+                                key={idx}
+                                className="w-full text-left px-3 py-2.5 text-sm hover:bg-indigo-50 text-gray-700 hover:text-indigo-700 transition border-b border-gray-50 last:border-0 leading-tight"
+                                onMouseDown={(e) => {
+                                  e.preventDefault();
+                                  handleItemChange(item.id, 'description', suggestion);
+                                  setFocusedItemId(null);
+                                }}
+                              >
+                                {suggestion}
+                              </button>
+                            ))
+                          ) : (
+                            <div className="px-3 py-4 text-sm text-center text-gray-500">
+                              কোনো সাজেশন পাওয়া যায়নি
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </td>
-                    <td className="py-3 text-center">
+                    <td className="py-3 px-4 text-sm text-gray-600 text-right">
                       <input 
                         type="number" 
                         value={item.quantity}
                         onChange={(e) => handleItemChange(item.id, 'quantity', Number(e.target.value))}
-                        className="w-full bg-transparent border-none focus:ring-0 p-0 text-center text-[#111827]"
+                        className="w-full bg-transparent border-none focus:ring-0 p-0 text-right text-gray-600"
                         min="1"
                       />
                     </td>
-                    <td className="py-3 text-right">
-                      <input 
-                        type="number" 
-                        value={item.rate}
-                        onChange={(e) => handleItemChange(item.id, 'rate', Number(e.target.value))}
-                        className="w-full bg-transparent border-none focus:ring-0 p-0 text-right text-[#111827]"
-                        min="0"
-                      />
+                    <td className="py-3 px-4 text-sm text-gray-600 text-right font-mono">
+                      <div className="flex items-center justify-end">
+                        <span className="mr-1 text-gray-500">{symbol}</span>
+                        <input 
+                          type="number" 
+                          value={item.rate}
+                          onChange={(e) => handleItemChange(item.id, 'rate', Number(e.target.value))}
+                          className="w-20 bg-transparent border-none focus:ring-0 p-0 text-right text-gray-600"
+                          min="0"
+                        />
+                      </div>
                     </td>
-                    <td className="py-3 text-right font-medium text-[#111827]">
-                      {(item.quantity * item.rate).toLocaleString('bn-BD')}
+                    <td className="py-3 px-4 text-sm text-gray-900 text-right font-mono font-medium">
+                      {symbol}{(item.quantity * item.rate).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
-                    <td className="py-3 text-right print:hidden">
+                    <td className="py-3 pr-4 text-right print:hidden">
                       <button 
                         onClick={() => handleRemoveItem(item.id)}
                         className="text-[#f87171] hover:text-[#dc2626]"
@@ -632,52 +799,70 @@ export default function InvoiceSystem() {
                 ))}
               </tbody>
             </table>
-            
-            <button 
-              onClick={handleAddItem}
-              className="mt-4 text-sm text-[#4f46e5] font-medium flex items-center hover:text-[#3730a3] print:hidden"
-            >
-              <Plus size={16} className="mr-1" /> নতুন আইটেম যোগ করুন
-            </button>
+            <div className="bg-white px-4 py-3 border-t border-gray-200 print:hidden">
+              <button 
+                onClick={handleAddItem}
+                className="text-sm font-medium flex items-center transition-colors"
+                style={{ color: themeColor }}
+              >
+                <Plus size={16} className="mr-1" /> নতুন আইটেম যোগ করুন
+              </button>
+            </div>
           </div>
 
           {/* Totals */}
-          <div className="flex justify-end">
-            <div className="w-64 space-y-3">
-              <div className="flex justify-between text-[#4b5563]">
-                <span>সাবটোটাল:</span>
-                <span>৳ {subtotal.toLocaleString('bn-BD')}</span>
+          <div className="flex justify-end mb-12">
+            <div className="w-1/2 p-4 rounded-xl border" style={{ backgroundColor: `${themeColor}05`, borderColor: `${themeColor}22` }}>
+              <div className="flex justify-between py-2 text-sm">
+                <span className="text-gray-600">Subtotal</span>
+                <span className="font-mono text-gray-900">{symbol}{subtotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
-              {taxRate > 0 && (
-                <div className="flex justify-between text-[#4b5563]">
-                  <span>ভ্যাট/ট্যাক্স ({taxRate}%):</span>
-                  <span>৳ {taxAmount.toLocaleString('bn-BD')}</span>
+              
+              {(discount > 0) && (
+                <div className="flex justify-between py-2 text-sm">
+                  <span className="text-gray-600">
+                    Discount {discountType === 'percentage' ? `(${discount}%)` : ''}
+                  </span>
+                  <span className="font-mono text-red-600">-{symbol}{discountAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
               )}
-              {discount > 0 && (
-                <div className="flex justify-between text-[#4b5563]">
-                  <span>ডিসকাউন্ট:</span>
-                  <span className="text-[#dc2626]">- ৳ {discount.toLocaleString('bn-BD')}</span>
+              
+              {(taxAmount > 0) && (
+                <div className="flex justify-between py-2 text-sm border-b" style={{ borderColor: `${themeColor}22` }}>
+                  <span className="text-gray-600">
+                    Tax {taxType === 'percentage' ? `(${taxRate}%)` : ''}
+                  </span>
+                  <span className="font-mono text-gray-900">+{symbol}{taxAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
               )}
-              <div className="flex justify-between text-xl font-bold text-[#111827] border-t border-[#e5e7eb] pt-3">
-                <span>সর্বমোট:</span>
-                <span>৳ {total.toLocaleString('bn-BD')}</span>
+              
+              <div className="flex justify-between py-4 text-lg font-bold">
+                <span style={{ color: themeColor }}>Total</span>
+                <span className="font-mono" style={{ color: themeColor }}>{symbol}{total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
             </div>
           </div>
 
-          {/* Notes */}
-          {notes && (
-            <div className="mt-12 text-[#4b5563] text-sm whitespace-pre-wrap">
-              <span className="font-semibold text-[#111827] block mb-1">নোট ও শর্তাবলী:</span>
-              <p>{notes}</p>
-            </div>
-          )}
+          {/* Notes & Terms */}
+          <div className="grid grid-cols-2 gap-8 text-sm text-gray-500">
+            {notes && (
+              <div>
+                <h4 className="font-semibold mb-1 border-b pb-1 inline-block" style={{ color: themeColor, borderColor: `${themeColor}33` }}>Notes</h4>
+                <p className="whitespace-pre-line mt-2">{notes}</p>
+              </div>
+            )}
+            {terms && (
+              <div>
+                <h4 className="font-semibold mb-1 border-b pb-1 inline-block" style={{ color: themeColor, borderColor: `${themeColor}33` }}>Terms & Conditions</h4>
+                <p className="whitespace-pre-line mt-2">{terms}</p>
+              </div>
+            )}
+          </div>
 
-          {/* Footer */}
-          <div className="mt-16 pt-8 border-t border-[#e5e7eb] text-center text-[#6b7280] text-sm">
-            <p>আমাদের সাথে কাজ করার জন্য ধন্যবাদ!</p>
+          {/* Footer Motif */}
+          <div className="mt-16 pt-8 border-t text-center text-xs text-gray-400" style={{ borderColor: `${themeColor}33` }}>
+            <p>Thank you for your business!</p>
+            <p className="mt-1">{agencyName} - Professional Services</p>
           </div>
 
         </div>

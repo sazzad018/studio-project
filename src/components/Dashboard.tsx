@@ -1,12 +1,78 @@
-import React from 'react';
-import { Users, Camera, Image as ImageIcon, Calendar, DollarSign, TrendingDown, TrendingUp } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Users, Camera, Image as ImageIcon, Calendar, DollarSign, TrendingDown, TrendingUp, Bell, Clock, LayoutGrid, List, Pin, MessageSquare, Phone } from 'lucide-react';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
+import { ClientReminder, ClientProfile } from './AllClients';
 
 export default function Dashboard() {
   const { clients, content, schedule } = useData();
   const { currentUser } = useAuth();
   
+  const [reminders, setReminders] = useState<ClientReminder[]>([]);
+  const [allClientsProfiles, setAllClientsProfiles] = useState<ClientProfile[]>([]);
+  const [studioLeads, setStudioLeads] = useState<any[]>([]);
+  const [reminderView, setReminderView] = useState<'list' | 'grid'>('grid');
+
+  useEffect(() => {
+    const rm = localStorage.getItem('allClientsReminders');
+    if (rm) setReminders(JSON.parse(rm));
+    
+    const cp = localStorage.getItem('allClientsData');
+    if (cp) setAllClientsProfiles(JSON.parse(cp));
+
+    const sl = localStorage.getItem('studio_leads');
+    if (sl) setStudioLeads(JSON.parse(sl));
+  }, []);
+
+  const isAdmin = currentUser?.role === 'admin';
+  const myReminders = reminders.filter(r => isAdmin || r.assignedToId === currentUser?.id);
+  const activeReminders = myReminders.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+
+  // Aggregate Important Contacts (Pinned Clients + Important Leads)
+  const importantContacts = (() => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    const pinnedClients = allClientsProfiles.filter(c => c.isPinned).map(c => ({
+      id: c.id,
+      type: 'client',
+      name: c.businessName,
+      whatsapp: c.whatsappNumber,
+      service: c.serviceType,
+      isPinned: true,
+      createdAt: c.createdAt,
+      tags: ['Pinned Client']
+    }));
+
+    const hotLeads = studioLeads.filter(l => {
+      const hasImportantTag = (l.tags || []).some((t: string) => ['hot', 'important', 'emergency', 'followup'].includes(t));
+      const hasReminder = l.reminderDate && l.reminderDate <= todayStr;
+      return hasImportantTag || hasReminder;
+    }).map(l => {
+      const isUrgent = l.reminderDate && l.reminderDate <= todayStr;
+      return {
+        id: l.id,
+        type: 'lead',
+        name: l.clientName || 'Lead',
+        whatsapp: l.whatsappNumber,
+        service: l.businessType || 'N/A',
+        isPinned: false,
+        createdAt: l.createdAt,
+        reminderDate: l.reminderDate,
+        isUrgent,
+        tags: l.tags || []
+      };
+    });
+
+    return [...pinnedClients, ...hotLeads]
+      .sort((a, b) => {
+         if (a.isUrgent && !b.isUrgent) return -1;
+         if (!a.isUrgent && b.isUrgent) return 1;
+         if (a.isPinned && !b.isPinned) return -1;
+         if (!a.isPinned && b.isPinned) return 1;
+         return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      })
+      .slice(0, 20); // max 20
+  })();
+
   const allProjects = clients.flatMap(c => c.projects || []).filter(project => {
     if (currentUser && currentUser.role !== 'admin' && currentUser.role !== 'manager') {
       return project.contentWriterId === currentUser.id || project.editorId === currentUser.id;
@@ -28,6 +94,51 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
+      {activeReminders.length > 0 && (
+        <div className="bg-orange-50 border border-orange-200 rounded-2xl p-6 shadow-sm mb-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-bold text-orange-800 flex items-center gap-2">
+              <Bell size={20} className="animate-pulse" /> গুরুত্বপূর্ণ রিমাইন্ডারসমূহ
+            </h2>
+            <div className="flex bg-white rounded-lg p-1 border border-orange-200 shadow-sm">
+              <button 
+                onClick={() => setReminderView('list')}
+                className={`p-1.5 rounded-md ${reminderView === 'list' ? 'bg-orange-100 text-orange-700' : 'text-gray-400 hover:text-gray-600'}`}
+                title="লিস্ট ভিউ"
+              >
+                <List size={16} />
+              </button>
+              <button 
+                onClick={() => setReminderView('grid')}
+                className={`p-1.5 rounded-md ${reminderView === 'grid' ? 'bg-orange-100 text-orange-700' : 'text-gray-400 hover:text-gray-600'}`}
+                title="গ্রিড ভিউ"
+              >
+                <LayoutGrid size={16} />
+              </button>
+            </div>
+          </div>
+          <div className={`${reminderView === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 gap-4' : 'flex flex-col space-y-3'}`}>
+            {activeReminders.map(reminder => {
+              const client = allClientsProfiles.find(c => c.id === reminder.clientId);
+              return (
+                <div key={reminder.id} className="bg-white p-4 rounded-xl shadow-sm border border-orange-100 flex gap-4 items-start">
+                  <div className="p-2 bg-orange-100 text-orange-600 rounded-lg shrink-0">
+                    <Clock size={20} />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-gray-900">{client?.businessName || 'Unknown Client'}</h3>
+                    <p className="text-sm text-gray-600 mt-1 whitespace-pre-wrap">{reminder.text}</p>
+                    <p className="text-xs font-semibold text-orange-600 mt-2 flex items-center gap-1">
+                      <Calendar size={14} /> তারিখ: {new Date(reminder.dueDate).toLocaleDateString('bn-BD', { day: 'numeric', month: 'long', year: 'numeric' })}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight">ড্যাশবোর্ড ওভারভিউ</h1>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -102,6 +213,55 @@ export default function Dashboard() {
               <p className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">রেভিনিউ</p>
               <p className="text-3xl font-black text-gray-900 tracking-tight">৳{totalRevenue.toLocaleString('bn-BD')}</p>
             </div>
+          </div>
+        </div>
+      )}
+
+      {importantContacts.length > 0 && (
+        <div className="bg-white p-6 md:p-8 rounded-3xl shadow-[0_4px_24px_rgba(0,0,0,0.02)] border border-gray-100">
+          <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
+            <span className="w-8 h-8 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center mr-3">
+              <Users size={16} />
+            </span>
+            স্পেশাল ফোকাস (গুরুত্বপূর্ণ লিডস এবং পিন করা ক্লায়েন্ট)
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+             {importantContacts.map(contact => (
+               <div key={contact.id} className={`p-4 rounded-xl border ${contact.isUrgent ? 'border-orange-200 bg-orange-50/30' : contact.isPinned ? 'border-indigo-200 bg-indigo-50/30' : 'border-gray-200 bg-gray-50/50 hover:bg-white transition-colors'} shadow-sm`}>
+                 <div className="flex justify-between items-start mb-2">
+                   <h3 className="font-bold text-gray-900 flex items-center text-sm truncate">
+                     {contact.isPinned && <Pin size={12} className="text-indigo-600 fill-indigo-100 mr-1.5" />}
+                     {contact.name || 'নামহীন'}
+                   </h3>
+                   <span className={`text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border ${contact.type === 'client' ? 'bg-blue-100 text-blue-700 border-blue-200' : 'bg-green-100 text-green-700 border-green-200'}`}>
+                     {contact.type}
+                   </span>
+                 </div>
+                 <div className="text-xs text-gray-500 font-medium mb-3 flex items-center gap-1.5 truncate">
+                   <MessageSquare size={12} /> {contact.service}
+                 </div>
+                 {contact.whatsapp && (
+                   <div className="text-xs bg-white border border-gray-100 px-2.5 py-1.5 rounded-md flex items-center mb-2 font-medium">
+                     <Phone size={12} className="text-gray-400 mr-1.5" />
+                     {contact.whatsapp}
+                   </div>
+                 )}
+                 {contact.tags && contact.tags.length > 0 && (
+                   <div className="flex flex-wrap gap-1">
+                     {contact.tags.map((t, idx) => (
+                       <span key={idx} className="text-[9px] bg-gray-100 text-gray-600 font-bold uppercase px-1.5 py-0.5 rounded border border-gray-200">
+                         {t.replace('🔥 Hot Lead', 'HOT').replace('🚨 Emergency Contact', 'EMERGENCY').replace('📅 Follow Up', 'FOLLOWUP').replace('⭐ Important', 'IMPORTANT')}
+                       </span>
+                     ))}
+                   </div>
+                 )}
+                 {contact.reminderDate && (
+                   <div className={`mt-2 text-[10px] font-bold ${contact.isUrgent ? 'text-orange-600' : 'text-blue-600'} flex items-center gap-1`}>
+                     <Calendar size={10} /> রিমাইন্ডার: {contact.reminderDate}
+                   </div>
+                 )}
+               </div>
+             ))}
           </div>
         </div>
       )}

@@ -13,6 +13,7 @@ export default function UserManagement() {
     email: '',
     password: '',
     role: 'user',
+    isSuperAdmin: false,
     permissions: currentUser?.role === 'admin' ? ALL_PERMISSIONS.map(p => p.id) : (currentUser?.permissions || []),
     projectPermissions: PROJECT_PERMISSIONS.map(p => p.id) // Default all checked
   };
@@ -45,6 +46,7 @@ export default function UserManagement() {
       email: user.email,
       password: user.password || '',
       role: user.role,
+      isSuperAdmin: user.isSuperAdmin || false,
       permissions: user.permissions || [],
       projectPermissions: user.projectPermissions || PROJECT_PERMISSIONS.map(p => p.id)
     });
@@ -104,11 +106,12 @@ export default function UserManagement() {
                       {user.email} 
                       <span className="text-gray-300">•</span> 
                       <span className={`px-2.5 py-0.5 rounded-full uppercase tracking-wider text-[10px] font-extrabold border ${
+                        user.isSuperAdmin ? 'bg-red-100 text-red-700 border-red-200' :
                         user.role === 'admin' ? 'bg-indigo-100 text-indigo-700 border-indigo-200' : 
                         user.role === 'manager' ? 'bg-blue-100 text-blue-700 border-blue-200' : 
                         'bg-gray-100 text-gray-700 border-gray-200'
                       }`}>
-                        {user.role}
+                        {user.isSuperAdmin ? 'super admin' : user.role}
                       </span>
                     </div>
                   </div>
@@ -206,6 +209,33 @@ export default function UserManagement() {
               {(currentUser?.role === 'admin' || formData.role === 'admin') && <option value="admin">Admin</option>}
             </select>
           </div>
+
+          {(formData.role === 'admin' && currentUser?.isSuperAdmin) && (
+            <div>
+              <label className="flex items-center p-3.5 rounded-xl border-2 transition-all cursor-pointer select-none group bg-red-50/50 border-red-200 hover:border-red-300">
+                <div className={`relative flex items-center justify-center w-6 h-6 rounded-lg border-2 transition-all duration-200 mr-3 flex-shrink-0 ${
+                  formData.isSuperAdmin
+                    ? 'bg-red-600 border-red-600 scale-100' 
+                    : 'bg-white border-red-300 group-hover:border-red-400 scale-95'
+                }`}>
+                  {formData.isSuperAdmin && (
+                    <svg className="w-3.5 h-3.5 text-white animate-in zoom-in duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                </div>
+                <input
+                  type="checkbox"
+                  className="hidden"
+                  checked={formData.isSuperAdmin || false}
+                  onChange={(e) => setFormData({...formData, isSuperAdmin: e.target.checked})}
+                />
+                <span className="text-sm font-bold text-red-900 flex items-center gap-2">
+                  <Shield size={16} /> সুপার এডমিন অনুমতি (Super Admin)
+                </span>
+              </label>
+            </div>
+          )}
           
           {(formData.role === 'user' || formData.role === 'manager') && (
             <div className="pt-2">

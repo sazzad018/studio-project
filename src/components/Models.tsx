@@ -1,14 +1,29 @@
 import React, { useState } from 'react';
 import { useData } from '../context/DataContext';
-import { Star, Briefcase, DollarSign, User, Plus, Phone, Mail, Facebook } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { Star, Briefcase, DollarSign, User, Plus, Phone, Mail, Facebook, Trash2, Copy, CheckCircle2 } from 'lucide-react';
 import Modal from './Modal';
 
 export default function Models() {
   const { models, clients, addModel } = useData();
+  const { currentUser } = useAuth();
   const [selectedModel, setSelectedModel] = useState(models[0] || null);
+  const [linkCopied, setLinkCopied] = useState(false);
+
+  const handleCopyRegistrationLink = () => {
+    const url = `${window.location.origin}?model-registration=true`;
+    navigator.clipboard.writeText(url);
+    setLinkCopied(true);
+    setTimeout(() => setLinkCopied(false), 2000);
+  };
+
+  const canSee = (permId: string) => {
+    if (currentUser?.role === 'admin' || currentUser?.role === 'manager') return true;
+    return currentUser?.projectPermissions?.includes(permId) ?? false;
+  };
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [newModel, setNewModel] = useState({ name: '', category: '', hourlyRate: 0, imageUrl: '', phone: '', email: '', facebook: '', projects: [] as string[] });
+  const [newModel, setNewModel] = useState({ name: '', category: '', hourlyRate: 0, imageUrl: '', phone: '', email: '', facebook: '', portfolioLinks: [] as string[], portfolioImages: [] as string[], projects: [] as string[] });
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -49,6 +64,50 @@ export default function Models() {
     }
   };
 
+  const handlePortfolioImagesUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files) {
+      Array.from(files).forEach((file: File) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const MAX_WIDTH = 800;
+            const MAX_HEIGHT = 600;
+            let width = img.width;
+            let height = img.height;
+
+            if (width > height) {
+              if (width > MAX_WIDTH) {
+                height *= MAX_WIDTH / width;
+                width = MAX_WIDTH;
+              }
+            } else {
+              if (height > MAX_HEIGHT) {
+                width *= MAX_HEIGHT / height;
+                height = MAX_HEIGHT;
+              }
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx?.drawImage(img, 0, 0, width, height);
+            
+            const base64String = canvas.toDataURL('image/jpeg', 0.7);
+            setNewModel(prev => ({ 
+              ...prev, 
+              portfolioImages: [...prev.portfolioImages, base64String] 
+            }));
+          };
+          img.src = reader.result as string;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+  };
+
   const handleAddModel = (e: React.FormEvent) => {
     e.preventDefault();
     addModel({
@@ -56,19 +115,29 @@ export default function Models() {
       imageUrl: newModel.imageUrl || `https://picsum.photos/seed/${newModel.name}/200/300`
     });
     setIsModalOpen(false);
-    setNewModel({ name: '', category: '', hourlyRate: 0, imageUrl: '', phone: '', email: '', facebook: '', projects: [] });
+    setNewModel({ name: '', category: '', hourlyRate: 0, imageUrl: '', phone: '', email: '', facebook: '', portfolioLinks: [], portfolioImages: [], projects: [] });
   };
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight">মডেল-ভিত্তিক বিশ্লেষণ</h1>
-        <button 
-          onClick={() => setIsModalOpen(true)}
-          className="bg-purple-600 text-white px-5 py-2.5 rounded-xl font-bold flex items-center hover:bg-purple-700 hover:shadow-lg hover:shadow-purple-200 transition-all hover:-translate-y-0.5"
-        >
-          <Plus size={20} className="mr-2" /> নতুন মডেল
-        </button>
+        <div className="flex gap-3">
+          <button 
+            onClick={handleCopyRegistrationLink}
+            className="bg-indigo-50 text-indigo-700 px-5 py-2.5 rounded-xl font-bold flex items-center hover:bg-indigo-100 transition-all border border-indigo-200"
+            title="মডেল রেজিস্ট্রেশন লিংক কপি করুন"
+          >
+            {linkCopied ? <CheckCircle2 size={20} className="mr-2 text-green-600" /> : <Copy size={20} className="mr-2" />}
+            {linkCopied ? 'কপি হয়েছে!' : 'রেজিস্ট্রেশন লিংক'}
+          </button>
+          <button 
+            onClick={() => setIsModalOpen(true)}
+            className="bg-purple-600 text-white px-5 py-2.5 rounded-xl font-bold flex items-center hover:bg-purple-700 hover:shadow-lg hover:shadow-purple-200 transition-all hover:-translate-y-0.5"
+          >
+            <Plus size={20} className="mr-2" /> নতুন মডেল
+          </button>
+        </div>
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -261,6 +330,77 @@ export default function Models() {
             <label className="block text-sm font-medium text-gray-700 mb-1">ফেসবুক পেজ/প্রোফাইল (ঐচ্ছিক)</label>
             <input type="url" value={newModel.facebook} onChange={e => setNewModel({...newModel, facebook: e.target.value})} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none" placeholder="https://facebook.com/..." />
           </div>
+
+          <div>
+            <div className="flex justify-between items-center mb-1">
+              <label className="block text-sm font-medium text-gray-700">পোর্টফলিও লিংক (একাধিক)</label>
+              <button 
+                type="button" 
+                onClick={() => setNewModel({...newModel, portfolioLinks: [...newModel.portfolioLinks, '']})} 
+                className="text-xs bg-purple-50 text-purple-600 px-2 py-1 rounded hover:bg-purple-100 flex items-center"
+              >
+                <Plus size={14} className="mr-1" /> যোগ করুন
+              </button>
+            </div>
+            {newModel.portfolioLinks.map((link, index) => (
+              <div key={index} className="flex mb-2 items-center">
+                <input 
+                  type="url" 
+                  value={link} 
+                  onChange={e => {
+                    const newLinks = [...newModel.portfolioLinks];
+                    newLinks[index] = e.target.value;
+                    setNewModel({...newModel, portfolioLinks: newLinks});
+                  }} 
+                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-sm" 
+                  placeholder="https://..." 
+                />
+                <button 
+                  type="button" 
+                  onClick={() => {
+                    const newLinks = [...newModel.portfolioLinks];
+                    newLinks.splice(index, 1);
+                    setNewModel({...newModel, portfolioLinks: newLinks});
+                  }} 
+                  className="ml-2 text-red-500 hover:text-red-700"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            ))}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">পোর্টফোলিও ইমেজ (একাধিক)</label>
+            <input 
+              type="file" 
+              accept="image/*" 
+              multiple 
+              onChange={handlePortfolioImagesUpload} 
+              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none" 
+            />
+            {newModel.portfolioImages.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-2">
+                {newModel.portfolioImages.map((img, index) => (
+                  <div key={index} className="relative">
+                    <img src={img} alt={`Portfolio ${index}`} className="h-16 w-16 object-cover rounded-lg border border-gray-200" />
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        const newImages = [...newModel.portfolioImages];
+                        newImages.splice(index, 1);
+                        setNewModel({...newModel, portfolioImages: newImages});
+                      }}
+                      className="absolute -top-2 -right-2 bg-red-100 text-red-600 rounded-full p-1 hover:bg-red-200"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">মডেলের ছবি</label>
             <input type="file" accept="image/*" onChange={handleImageUpload} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none" />

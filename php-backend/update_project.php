@@ -13,10 +13,10 @@ if($data && isset($data->projectId)) {
     $fields = [];
     $values = [];
     if (isset($data->name)) { 
-        $fields[] = "name = ?"; 
+        $fields[] = "title = ?"; 
         $values[] = $data->name; 
     } elseif (isset($data->title)) { 
-        $fields[] = "name = ?"; 
+        $fields[] = "title = ?"; 
         $values[] = $data->title; 
     }
     if (isset($data->status)) { $fields[] = "status = ?"; $values[] = $data->status; }

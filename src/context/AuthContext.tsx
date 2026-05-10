@@ -1,11 +1,17 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import { API_BASE_URL, USE_MOCK_FALLBACK } from '../config';
 
 export type Role = 'admin' | 'manager' | 'user';
 
 export const ALL_PERMISSIONS = [
   { id: 'dashboard', label: 'ড্যাশবোর্ড' },
-  { id: 'projects', label: 'প্রজেক্ট লিস্ট' },
+  { id: 'projects', label: 'কনটেন্ট প্রজেক্ট লিস্ট' },
   { id: 'clients', label: 'ক্লায়েন্ট প্রোফাইল' },
+  { id: 'all-clients', label: 'অল লিড / ক্লায়েন্ট' },
+  { id: 'website', label: 'ওয়েবসাইট' },
+  { id: 'automation', label: 'অটোমেশন' },
+  { id: 'course', label: 'কোর্স' },
+  { id: 'marketing', label: 'মার্কেটিং' },
   { id: 'models', label: 'মডেল বিশ্লেষণ' },
   { id: 'scheduling', label: 'শিডিউলিং' },
   { id: 'lead', label: 'লিড' },
@@ -15,6 +21,7 @@ export const ALL_PERMISSIONS = [
   { id: 'task-manager', label: 'টাস্ক ম্যানেজার' },
   { id: 'portfolio', label: 'স্টুডিও পোর্টফোলিও' },
   { id: 'employees', label: 'এমপ্লয়ি লিস্ট' },
+  { id: 'website-info', label: 'ওয়েবসাইট ইনফো' },
   { id: 'users', label: 'ইউজার ম্যানেজমেন্ট' },
   { id: 'messages', label: 'মেসেজ বক্স' }
 ];
@@ -34,6 +41,7 @@ export interface User {
   email: string;
   password?: string;
   role: Role;
+  isSuperAdmin?: boolean;
   permissions: string[];
   projectPermissions?: string[];
 }
@@ -50,10 +58,11 @@ interface AuthContextType {
 
 const defaultAdmin: User = {
   id: 'u1',
-  name: 'Admin',
+  name: 'Super Admin',
   email: 'admin',
   password: 'admin',
   role: 'admin',
+  isSuperAdmin: true,
   permissions: ALL_PERMISSIONS.map(p => p.id),
   projectPermissions: PROJECT_PERMISSIONS.map(p => p.id)
 };
@@ -77,6 +86,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     localStorage.setItem('studio_auth_users', JSON.stringify(users));
+    
+    // Sync to backend KV store so user accounts persist across devices
+    if (!USE_MOCK_FALLBACK) {
+      fetch(`${API_BASE_URL}/store.php?key=studio_auth_users`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(users)
+      }).catch(err => console.warn('Failed to sync users to backend', err));
+    }
   }, [users]);
 
   const login = (email: string, password?: string) => {

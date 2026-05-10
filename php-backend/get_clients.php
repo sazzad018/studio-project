@@ -18,7 +18,9 @@ foreach ($clients as &$client) {
         $totalBudget += $project['budget'];
         
         // Add default values for properties expected by the frontend
-        $project['title'] = isset($project['name']) ? $project['name'] : '';
+        if (!isset($project['title']) && isset($project['name'])) {
+            $project['title'] = $project['name'];
+        }
         $project['contentLog'] = isset($project['contentLog']) && !empty($project['contentLog']) ? json_decode($project['contentLog']) : [];
         $project['clientAdvance'] = isset($project['clientAdvance']) ? (float)$project['clientAdvance'] : 0;
         $project['modelPayment'] = isset($project['modelPayment']) ? (float)$project['modelPayment'] : 0;
